@@ -33,27 +33,27 @@ func init() {
 
     // p（P）阶循环群 G，g（G）为生成元，s_i（X）为私钥
     priv = []*PrivateKey{
-        &PrivateKey{
+        {
             PublicKey: PublicKey{
                 G: fromHex(generatorHex),
                 P: fromHex(primeHex),
             },
             X: fromHex("40"),
-        },
-        &PrivateKey{
+                },
+        {
             PublicKey: PublicKey{
                 G: fromHex(generatorHex),
                 P: fromHex(primeHex),
             },
             X: fromHex("41"),
-        },
-        &PrivateKey{
+                },
+        {
             PublicKey: PublicKey{
                 G: fromHex(generatorHex),
                 P: fromHex(primeHex),
             },
             X: fromHex("42"),
-        },
+                },
     }
 
     for _, key := range priv {
@@ -65,7 +65,7 @@ func Generate(m string) *ABSSignature {
     M := []byte(m)
 
     // (t, n) 门限，（2，3）
-    R := []*big.Int{}
+    var R []*big.Int
     // 属于属性的 1~t
     T := []*big.Int{ big.NewInt(12), big.NewInt(22) }
     for i, t := range T {
@@ -88,18 +88,18 @@ func Generate(m string) *ABSSignature {
     // fmt.Printf("%x", result)
 
     lagPoints := []*lagPoint {
-        &lagPoint{
+        {
             X: big.NewInt(0),
             Y: new(big.Int).SetBytes(resultTemp),
-        },
-        &lagPoint{
+                },
+        {
             X: big.NewInt(3),
             Y: C[0],
-        },
+                },
     }
 
-    CTemp := []*big.Int{}
-    DTemp := []*big.Int{}
+    var CTemp []*big.Int
+    var DTemp []*big.Int
     for i := 1; i <= 2; i += 1 {
         cTemp := lagRange(lagPoints, big.NewInt(int64(i)))
         CTemp = append(CTemp, cTemp)

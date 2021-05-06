@@ -8,13 +8,13 @@ import (
 )
 
 func ApplyForABSCertificate(w http.ResponseWriter, r *http.Request) {
-    r.ParseForm()
+    _ = r.ParseForm()
 
     m := r.Form.Get("m")
     sign := Generate(m)
 
     bdata, _ := json.Marshal(sign)
-    fmt.Fprintf(w, string(bdata))
+    _, _ = fmt.Fprintf(w, string(bdata))
 }
 
 func VerifyABSCertificate(w http.ResponseWriter, r *http.Request) {
