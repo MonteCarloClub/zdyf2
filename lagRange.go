@@ -2,7 +2,7 @@ package main
 
 import "math/big"
 
-func lagRange(a []*lagPoint, x *big.Int) *big.Int {
+func LagRange(a []*LagPoint, x *big.Int) *big.Int {
     result := big.NewInt(0)
     for i, lP := range a {
         up := big.NewInt(1)

@@ -5,7 +5,7 @@ ra:
 	@go build -o ${RA} ca.go ra.go lagRange.go router.go define.go
 
 client:
-	@go build -o ${CLIENT} client.go define.go
+	@go build -o ${CLIENT} client.go define.go rsaT.go ecdsaT.go
 
 clean:
 	@rm -f ${RA}
