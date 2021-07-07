@@ -15,6 +15,7 @@ var (
 
 func init() {
     gPort  = flag.Int("port", 9001, "ca server port.")
+    flag.Parse()
 }
 
 func SingleGenerate(w http.ResponseWriter, r *http.Request) {

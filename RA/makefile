@@ -1,9 +1,9 @@
-CLIENT=abs_client
+RA=abs_server_ra
 
-client:
-	@go build -o ${CLIENT} client.go define.go rsaT.go ecdsaT.go
+ra:
+	@go build -o ${RA} ra.go define.go
 
 clean:
-	@rm -f ${CLIENT}
+	@rm -f ${RA}
 
-all: ra client
+all: ra

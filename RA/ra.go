@@ -20,10 +20,11 @@ var (
 )
 
 func init() {
-    gPort  = flag.Int("port", 9000, "ra server port.")
+    gPort  = flag.Int("port", 8000, "ra server port.")
     Version = "1.0"
     IssuerName = "RA-" + *flag.String("name", "1", "ra name")
     CertificateMap = make(map[string]CertificateResponse)
+    flag.Parse()
 }
 
 func ApplyForABSCertificate(w http.ResponseWriter, r *http.Request) {
@@ -45,14 +46,14 @@ func ApplyForABSCertificate(w http.ResponseWriter, r *http.Request) {
     client := &http.Client{Timeout: 10 * time.Second}
     resp, err := client.Post("http://127.0.0.1:9001/SingleGenerate", "application/json", bytes.NewReader(b))
     if err != nil {
-        fmt.Println(err.Error())
+        http.Error(w, err.Error(), 500)
         return
     }
     defer resp.Body.Close()
 
     sign, err := ioutil.ReadAll(resp.Body)
     if err != nil {
-        fmt.Println(err.Error())
+        http.Error(w, err.Error(), 500)
         return
     }
 
@@ -73,8 +74,8 @@ func VerifyABSCertificate(w http.ResponseWriter, r *http.Request) {
         http.Error(w, "Certificate does not exist.", 500)
     } else {
         valid := res.CertificateContent.ValidityPeriod
-        fmt.Println(valid)
-        fmt.Println(time.Now().UnixNano())
+        //fmt.Println(valid)
+        //fmt.Println(time.Now().UnixNano())
         if valid == strconv.FormatInt(time.Now().UnixNano(), 10) {
             http.Error(w, "The certificate has expired.", 500)
         } else {

@@ -2,6 +2,7 @@ package main
 
 import (
     "crypto/sha256"
+    "flag"
     "math/big"
 )
 
@@ -18,41 +19,29 @@ func fromHex(hex string) *big.Int {
 }
 
 var (
-    numT int
+    numT *int
+    numN *int
     numG *big.Int
     numP *big.Int
     priv []*PrivateKey
 )
 
 func init() {
-    numT = 2
+    numT = flag.Int("t", 75, "t of (t, n).")
+    numN = flag.Int("n", 100, "n of (t, n).")
+    flag.Parse()
     numG = fromHex(generatorHex)
     numP = fromHex(primeHex)
-    //   numN := 3
 
     // p（P）阶循环群 G，g（G）为生成元，s_i（X）为私钥
-    priv = []*PrivateKey{
-        {
+    for i := 1; i <= *numN; i += 1 {
+        priv = append(priv, &PrivateKey{
             PublicKey: PublicKey{
                 G: fromHex(generatorHex),
                 P: fromHex(primeHex),
             },
-            X: fromHex("40"),
-        },
-        {
-            PublicKey: PublicKey{
-                G: fromHex(generatorHex),
-                P: fromHex(primeHex),
-            },
-            X: fromHex("41"),
-        },
-        {
-            PublicKey: PublicKey{
-                G: fromHex(generatorHex),
-                P: fromHex(primeHex),
-            },
-            X: fromHex("42"),
-        },
+            X: big.NewInt(int64(i)),
+        })
     }
 
     for _, key := range priv {
@@ -63,19 +52,26 @@ func init() {
 func Generate(m string) *ABSSignature {
     M := []byte(m)
 
-    // (t, n) 门限，（2，3）
+    // (t, n) 门限
     var R []*big.Int
+    var T []*big.Int
     // 属于属性的 1~t
-    T := []*big.Int{ big.NewInt(12), big.NewInt(22) }
+    for i := 1; i <= *numT; i += 1 {
+        T = append(T, big.NewInt(10 + int64(i)))
+    }
     for i, t := range T {
         R = append(R, new(big.Int).Exp(priv[i].G, t, priv[i].P))
     }
 
     // 不属于属性的 t+1～n
-    C := []*big.Int{ big.NewInt(32) }
-    D := []*big.Int{ big.NewInt(42) }
+    var C []*big.Int
+    var D []*big.Int
+    for i := 1; i <= *numN - *numT; i += 1 {
+        C = append(C, big.NewInt(30 + int64(i)))
+        D = append(D, big.NewInt(40 + int64(i)))
+    }
     for i, c := range C {
-        R = append(R, new(big.Int).Mul(new(big.Int).Exp(numG, D[i], numP), new(big.Int).Exp(priv[i + numT].Y, c, numP)))
+        R = append(R, new(big.Int).Mul(new(big.Int).Exp(numG, D[i], numP), new(big.Int).Exp(priv[i + *numT].Y, c, numP)))
     }
 
     buf := M
@@ -91,15 +87,17 @@ func Generate(m string) *ABSSignature {
             X: big.NewInt(0),
             Y: new(big.Int).SetBytes(resultTemp),
         },
-        {
-            X: big.NewInt(3),
-            Y: C[0],
-        },
+    }
+    for i := 1; i <= *numN - *numT; i += 1 {
+        lagPoints = append(lagPoints, &LagPoint{
+            X: big.NewInt(int64(*numT + i)),
+            Y: C[i - 1],
+        })
     }
 
     var CTemp []*big.Int
     var DTemp []*big.Int
-    for i := 1; i <= 2; i += 1 {
+    for i := 1; i <= *numT; i += 1 {
         cTemp := LagRange(lagPoints, big.NewInt(int64(i)))
         CTemp = append(CTemp, cTemp)
         dTemp := new(big.Int).Sub(T[i - 1], new(big.Int).Mul(cTemp, priv[i - 1].X))
