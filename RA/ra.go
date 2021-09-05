@@ -9,6 +9,7 @@ import (
     "log"
     "net/http"
     "strconv"
+    "sync"
     "time"
 )
 
@@ -17,6 +18,7 @@ var (
     Version string
     IssuerName string
     CertificateMap map[string]CertificateResponse
+    gRWLock             sync.RWMutex
 )
 
 func init() {
@@ -61,7 +63,11 @@ func ApplyForABSCertificate(w http.ResponseWriter, r *http.Request) {
         CertificateContent: c,
         ABSSign: string(sign),
     }
+
+    gRWLock.Lock()
     CertificateMap[serialNumber] = res
+    gRWLock.Unlock()
+
     bData, _ := json.Marshal(res)
     _, _ = fmt.Fprintf(w, string(bData))
 }
@@ -69,6 +75,9 @@ func ApplyForABSCertificate(w http.ResponseWriter, r *http.Request) {
 func VerifyABSCertificate(w http.ResponseWriter, r *http.Request) {
     _ = r.ParseForm()
     serialNumber := r.Form.Get("no")
+
+    gRWLock.RLock()
+    defer gRWLock.RUnlock()
 
     if res, ok := CertificateMap[serialNumber]; !ok {
         http.Error(w, "Certificate does not exist.", 500)
@@ -93,9 +102,16 @@ func VerifyABSCertificate(w http.ResponseWriter, r *http.Request) {
     }
 }
 
+func GetCertificateNumber(w http.ResponseWriter, r *http.Request) {
+    gRWLock.RLock()
+    http.Error(w, strconv.Itoa(len(CertificateMap)), 200)
+    gRWLock.RUnlock()
+}
+
 func main() {
     http.HandleFunc("/ApplyForABSCertificate", ApplyForABSCertificate)
     http.HandleFunc("/VerifyABSCertificate", VerifyABSCertificate)
+    http.HandleFunc("/GetCertificateNumber", GetCertificateNumber)
 
     if err := http.ListenAndServe(fmt.Sprintf(":%d", *gPort), nil); err != nil {
         log.Fatalln(err)
