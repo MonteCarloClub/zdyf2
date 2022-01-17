@@ -7,9 +7,16 @@ type Certificate struct {
     Issuer string         `json:"issuer"`
     ValidityPeriod string `json:"validityPeriod"`
     ABSUID string         `json:"ABSUID"`
+    ABSAttribute string   `json:"ABSAttribute"`
 }
 
 type CertificateResponse struct {
     CertificateContent Certificate `json:"certificate"`
     ABSSign string                 `json:"absSignature"`
+}
+
+type RevokeResponse struct {
+    Status string `json:"status"`
+    Timestamp string `json:"timestamp"`
+    Tx string `json:"tx"`
 }

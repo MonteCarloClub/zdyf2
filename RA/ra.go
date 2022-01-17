@@ -2,12 +2,15 @@ package main
 
 import (
     "bytes"
+    "crypto/sha256"
+    "encoding/hex"
     "encoding/json"
     "flag"
     "fmt"
     "io/ioutil"
     "log"
     "net/http"
+    "os"
     "strconv"
     "sync"
     "time"
@@ -18,6 +21,7 @@ var (
     Version string
     IssuerName string
     CertificateMap map[string]CertificateResponse
+    UserID map[string]string
     gRWLock             sync.RWMutex
 )
 
@@ -26,12 +30,16 @@ func init() {
     Version = "1.0"
     IssuerName = "RA-" + *flag.String("name", "1", "ra name")
     CertificateMap = make(map[string]CertificateResponse)
+    UserID = make(map[string]string)
     flag.Parse()
 }
 
 func ApplyForABSCertificate(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+
     _ = r.ParseForm()
     uid := r.Form.Get("uid")
+    attribute := r.Form.Get("attribute")
 
     timeStr := time.Now()
     serialNumber := uid + "-" + strconv.FormatInt(timeStr.UnixNano(), 10)
@@ -42,6 +50,7 @@ func ApplyForABSCertificate(w http.ResponseWriter, r *http.Request) {
         Issuer: IssuerName,
         ValidityPeriod: strconv.FormatInt(timeStr.UnixNano(), 10),
         ABSUID: uid,
+        ABSAttribute: attribute,
     }
 
     b, _ := json.Marshal(c)
@@ -66,6 +75,7 @@ func ApplyForABSCertificate(w http.ResponseWriter, r *http.Request) {
 
     gRWLock.Lock()
     CertificateMap[serialNumber] = res
+    UserID[uid] = serialNumber
     gRWLock.Unlock()
 
     bData, _ := json.Marshal(res)
@@ -73,6 +83,8 @@ func ApplyForABSCertificate(w http.ResponseWriter, r *http.Request) {
 }
 
 func VerifyABSCertificate(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+
     _ = r.ParseForm()
     serialNumber := r.Form.Get("no")
 
@@ -103,6 +115,8 @@ func VerifyABSCertificate(w http.ResponseWriter, r *http.Request) {
 }
 
 func RevokeABSCertificate(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+
     _ = r.ParseForm()
     serialNumber := r.Form.Get("no")
 
@@ -118,6 +132,8 @@ func RevokeABSCertificate(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetCertificateNumber(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+
     gRWLock.RLock()
     http.Error(w, strconv.Itoa(len(CertificateMap)), 200)
     gRWLock.RUnlock()
@@ -129,11 +145,126 @@ func GetCertificateNumber(w http.ResponseWriter, r *http.Request) {
 //    gRWLock.RUnlock()
 //}
 
+func IoTDevTest(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+
+    var a []CertificateResponse
+    for _, v := range CertificateMap {
+        a = append(a, v)
+    }
+    bData, _ := json.Marshal(a)
+    _, _ = fmt.Fprintf(w, string(bData))
+}
+
+func GetCertificate(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+
+    _ = r.ParseForm()
+    serialNumber := r.Form.Get("no")
+
+    gRWLock.RLock()
+    defer gRWLock.RUnlock()
+
+    if res, ok := CertificateMap[serialNumber]; !ok {
+        http.Error(w, "Certificate does not exist.", 500)
+    } else {
+        bData, _ := json.Marshal(res)
+        _, _ = fmt.Fprintf(w, string(bData))
+    }
+}
+
+func IotDevInit(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+
+    a := [200]CertificateResponse{}
+    for i := 0; i < 200; i++ {
+        client := &http.Client{Timeout: 10 * time.Second}
+        uid := "iotdevice" + strconv.Itoa(i)
+        attribute := "attribute1,attribute2,attribute3"
+        resp, err := client.Get("http://127.0.0.1:8001/ApplyForABSCertificate?uid=" + uid + "&&attribute=" + attribute)
+        if err != nil {
+            http.Error(w, err.Error(), 500)
+            return
+        }
+        s, _ := ioutil.ReadAll(resp.Body)
+
+        var cer CertificateResponse
+        _ = json.Unmarshal(s, &cer)
+        UserID[uid] = cer.CertificateContent.SerialNumber
+        a[i] = cer
+        resp.Body.Close()
+    }
+
+    bData, _ := json.Marshal(a)
+    _, _ = fmt.Fprintf(w, string(bData))
+}
+
+func RevokeABSCertificateByUID(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+
+    _ = r.ParseForm()
+    uid := r.Form.Get("userid")
+    serialNumber := UserID[uid]
+
+    gRWLock.RLock()
+    defer gRWLock.RUnlock()
+
+    if _, ok := CertificateMap[serialNumber]; !ok {
+        s := time.Unix(time.Now().Unix(), 0).Format("2006-01-02 15:04:05")
+
+        resp := RevokeResponse{
+            Status: "Certificate does not exist.",
+            Timestamp: s,
+            Tx: Sha256(strconv.FormatInt(time.Now().UnixNano(), 10)),
+        }
+        bData, _ := json.Marshal(resp)
+        _, _ = fmt.Fprintf(w, string(bData))
+    } else {
+        delete(CertificateMap, serialNumber)
+        delete(UserID, uid)
+        s := time.Unix(time.Now().Unix(), 0).Format("2006-01-02 15:04:05")
+        resp := RevokeResponse{
+            Status: "OK.",
+            Timestamp: s,
+            Tx: Sha256(strconv.FormatInt(time.Now().UnixNano(), 10)),
+        }
+        bData, _ := json.Marshal(resp)
+        _, _ = fmt.Fprintf(w, string(bData))
+    }
+}
+
+func Sha256(src string) string {
+    m := sha256.New()
+    m.Write([]byte(src))
+    res := hex.EncodeToString(m.Sum(nil))
+    return res
+}
+
+func login(w http.ResponseWriter, r *http.Request) {
+    str, err := ioutil.ReadFile("./template/index.html")
+    s, _ := os.Getwd()
+    if err != nil {
+        http.Error(w, s, 500)
+        return
+    }
+    _, _ = w.Write([]byte(str))
+}
+
 func main() {
     http.HandleFunc("/ApplyForABSCertificate", ApplyForABSCertificate)
     http.HandleFunc("/VerifyABSCertificate", VerifyABSCertificate)
     http.HandleFunc("/RevokeABSCertificate", RevokeABSCertificate)
+    http.HandleFunc("/RevokeABSCertificateByUID", RevokeABSCertificateByUID)
+
     http.HandleFunc("/GetCertificateNumber", GetCertificateNumber)
+    http.HandleFunc("/GetCertificate", GetCertificate)
+    http.HandleFunc("/IoTDevTest", IoTDevTest)
+    http.HandleFunc("/IotDevInit", IotDevInit)
+
+    http.HandleFunc("/login", login)
+    http.Handle("/", http.FileServer(http.Dir("template")))
+
+
     //http.HandleFunc("/ConcurrencyTest", ConcurrencyTest)
 
     if err := http.ListenAndServe(fmt.Sprintf(":%d", *gPort), nil); err != nil {
