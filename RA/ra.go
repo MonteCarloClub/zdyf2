@@ -102,16 +102,39 @@ func VerifyABSCertificate(w http.ResponseWriter, r *http.Request) {
     }
 }
 
+func RevokeABSCertificate(w http.ResponseWriter, r *http.Request) {
+    _ = r.ParseForm()
+    serialNumber := r.Form.Get("no")
+
+    gRWLock.RLock()
+    defer gRWLock.RUnlock()
+
+    if _, ok := CertificateMap[serialNumber]; !ok {
+        http.Error(w, "Certificate does not exist.", 500)
+    } else {
+        delete(CertificateMap, serialNumber)
+        _, _ = fmt.Fprintf(w, "OK.")
+    }
+}
+
 func GetCertificateNumber(w http.ResponseWriter, r *http.Request) {
     gRWLock.RLock()
     http.Error(w, strconv.Itoa(len(CertificateMap)), 200)
     gRWLock.RUnlock()
 }
 
+//func ConcurrencyTest(w http.ResponseWriter, r *http.Request) {
+//    gRWLock.RLock()
+//    http.Error(w, strconv.Itoa(len(CertificateMap)), 200)
+//    gRWLock.RUnlock()
+//}
+
 func main() {
     http.HandleFunc("/ApplyForABSCertificate", ApplyForABSCertificate)
     http.HandleFunc("/VerifyABSCertificate", VerifyABSCertificate)
+    http.HandleFunc("/RevokeABSCertificate", RevokeABSCertificate)
     http.HandleFunc("/GetCertificateNumber", GetCertificateNumber)
+    //http.HandleFunc("/ConcurrencyTest", ConcurrencyTest)
 
     if err := http.ListenAndServe(fmt.Sprintf(":%d", *gPort), nil); err != nil {
         log.Fatalln(err)
