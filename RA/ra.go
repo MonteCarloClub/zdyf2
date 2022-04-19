@@ -34,6 +34,7 @@ func init() {
     flag.Parse()
 }
 
+// 申请证书
 func ApplyForABSCertificate(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Access-Control-Allow-Origin", "*")
 
@@ -82,6 +83,7 @@ func ApplyForABSCertificate(w http.ResponseWriter, r *http.Request) {
     _, _ = fmt.Fprintf(w, string(bData))
 }
 
+// 验证证书
 func VerifyABSCertificate(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Access-Control-Allow-Origin", "*")
 
@@ -114,6 +116,7 @@ func VerifyABSCertificate(w http.ResponseWriter, r *http.Request) {
     }
 }
 
+// 撤销证书
 func RevokeABSCertificate(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Access-Control-Allow-Origin", "*")
 
@@ -131,6 +134,7 @@ func RevokeABSCertificate(w http.ResponseWriter, r *http.Request) {
     }
 }
 
+// 获取当前证书数量
 func GetCertificateNumber(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Access-Control-Allow-Origin", "*")
 
@@ -145,6 +149,7 @@ func GetCertificateNumber(w http.ResponseWriter, r *http.Request) {
 //    gRWLock.RUnlock()
 //}
 
+// IoT 设备证书测试，获取所有证书
 func IoTDevTest(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Access-Control-Allow-Origin", "*")
 
@@ -156,6 +161,7 @@ func IoTDevTest(w http.ResponseWriter, r *http.Request) {
     _, _ = fmt.Fprintf(w, string(bData))
 }
 
+// 通过序列号获取证书
 func GetCertificate(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Access-Control-Allow-Origin", "*")
 
@@ -173,6 +179,7 @@ func GetCertificate(w http.ResponseWriter, r *http.Request) {
     }
 }
 
+// IoT 设备初始化
 func IotDevInit(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Access-Control-Allow-Origin", "*")
 
@@ -180,7 +187,7 @@ func IotDevInit(w http.ResponseWriter, r *http.Request) {
     for i := 0; i < 200; i++ {
         client := &http.Client{Timeout: 10 * time.Second}
         uid := "iotdevice" + strconv.Itoa(i)
-        attribute := "attribute1,attribute2,attribute3"
+        attribute := "tag" +  strconv.Itoa(i) + "1,tag" +  strconv.Itoa(i) + "2,tag" + strconv.Itoa(i) + "3"
         resp, err := client.Get("http://127.0.0.1:8001/ApplyForABSCertificate?uid=" + uid + "&&attribute=" + attribute)
         if err != nil {
             http.Error(w, err.Error(), 500)
@@ -199,6 +206,7 @@ func IotDevInit(w http.ResponseWriter, r *http.Request) {
     _, _ = fmt.Fprintf(w, string(bData))
 }
 
+// 通过序列号撤销证书
 func RevokeABSCertificateByUID(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Access-Control-Allow-Origin", "*")
 
@@ -216,6 +224,7 @@ func RevokeABSCertificateByUID(w http.ResponseWriter, r *http.Request) {
             Status: "Certificate does not exist.",
             Timestamp: s,
             Tx: Sha256(strconv.FormatInt(time.Now().UnixNano(), 10)),
+            SerialNumber: serialNumber,
         }
         bData, _ := json.Marshal(resp)
         _, _ = fmt.Fprintf(w, string(bData))
@@ -227,6 +236,7 @@ func RevokeABSCertificateByUID(w http.ResponseWriter, r *http.Request) {
             Status: "OK.",
             Timestamp: s,
             Tx: Sha256(strconv.FormatInt(time.Now().UnixNano(), 10)),
+            SerialNumber: serialNumber,
         }
         bData, _ := json.Marshal(resp)
         _, _ = fmt.Fprintf(w, string(bData))
@@ -240,6 +250,7 @@ func Sha256(src string) string {
     return res
 }
 
+// 登录界面
 func login(w http.ResponseWriter, r *http.Request) {
     str, err := ioutil.ReadFile("./template/index.html")
     s, _ := os.Getwd()
@@ -250,6 +261,23 @@ func login(w http.ResponseWriter, r *http.Request) {
     _, _ = w.Write([]byte(str))
 }
 
+// 通过用户 UID 获取证书
+func GetCertificateByUID(w http.ResponseWriter, r *http.Request) {
+    _ = r.ParseForm()
+    uid := r.Form.Get("uid")
+    serialNumber := UserID[uid]
+
+    gRWLock.RLock()
+    defer gRWLock.RUnlock()
+
+    if res, ok := CertificateMap[serialNumber]; !ok {
+        http.Error(w, "Certificate does not exist.", 500)
+    } else {
+        bData, _ := json.Marshal(res)
+        _, _ = fmt.Fprintf(w, string(bData))
+    }
+}
+
 func main() {
     http.HandleFunc("/ApplyForABSCertificate", ApplyForABSCertificate)
     http.HandleFunc("/VerifyABSCertificate", VerifyABSCertificate)
@@ -258,12 +286,13 @@ func main() {
 
     http.HandleFunc("/GetCertificateNumber", GetCertificateNumber)
     http.HandleFunc("/GetCertificate", GetCertificate)
+    http.HandleFunc("/GetCertificateByUID", GetCertificateByUID)
+
     http.HandleFunc("/IoTDevTest", IoTDevTest)
     http.HandleFunc("/IotDevInit", IotDevInit)
 
     http.HandleFunc("/login", login)
     http.Handle("/", http.FileServer(http.Dir("template")))
-
 
     //http.HandleFunc("/ConcurrencyTest", ConcurrencyTest)
 

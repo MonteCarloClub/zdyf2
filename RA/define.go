@@ -19,4 +19,5 @@ type RevokeResponse struct {
     Status string `json:"status"`
     Timestamp string `json:"timestamp"`
     Tx string `json:"tx"`
+    SerialNumber string   `json:"serialNumber"`
 }
