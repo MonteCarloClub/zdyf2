@@ -1,0 +1,50 @@
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /get                      --> main.main.func1 (3 handlers)
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on 0.0.0.0:8090
+[GIN] 2022/11/04 - 10:48:30 | 500 |   22.320231ms |    10.176.40.47 | GET      "/get?serialNumber=serialNumber1"
+[GIN] 2022/11/04 - 10:48:43 | 500 |    6.478369ms |    10.176.40.47 | GET      "/get?serialNumber=serialNumber1"
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /get                      --> main.main.func1 (3 handlers)
+[GIN-debug] GET    /test                     --> main.main.func2 (3 handlers)
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on 0.0.0.0:8090
+[GIN] 2022/11/04 - 11:40:16 | 500 |    14.11296ms |   10.230.36.197 | GET      "/get?serialNumber=serialNumber1"
+[GIN] 2022/11/04 - 11:40:27 | 200 |       23.96µs |   10.230.36.197 | GET      "/test?serialNumber=serialNumber1"
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /get                      --> main.main.func1 (3 handlers)
+[GIN-debug] GET    /test                     --> main.main.func2 (3 handlers)
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on 0.0.0.0:8090
+[GIN] 2022/11/04 - 11:47:40 | 200 |      38.342µs |   10.230.36.197 | GET      "/test?serialNumber=serialNumber1"
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /get                      --> main.main.func1 (3 handlers)
+[GIN-debug] GET    /test                     --> main.main.func2 (3 handlers)
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on 0.0.0.0:8090
+[GIN] 2022/11/12 - 16:27:39 | 500 |  1.669762574s |    10.230.35.42 | GET      "/get?serialNumber=serialNumber1"
+[GIN] 2022/11/12 - 16:27:39 | 404 |         598ns |    10.230.35.42 | GET      "/favicon.ico"
