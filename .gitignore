@@ -1,3 +1,7 @@
 nohup.out
 test/server
 test/certs.txt
+CA/abs_server_ca
+RA/abs_server_ra
+Client/abs_client
+template
