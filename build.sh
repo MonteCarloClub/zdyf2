@@ -25,7 +25,7 @@ RunCA() {
 RunRA() {
   for i in $(seq 1 1 $1)
   do
-    nohup ./RA/$RA -port=$((8000+$i)) &
+    nohup ./RA/$RA -port=$((8000+$i)) -name=$(($i)) &
   done
 }
 
