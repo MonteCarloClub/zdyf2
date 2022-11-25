@@ -8,11 +8,11 @@ import (
 
 // 配置信息
 var (
-	sdk           *fabsdk.FabricSDK                    // Fabric SDK
-	channelName   = "appchannel"                       // 通道名称
-	username      = "Admin"                            // 用户
-	chainCodeName = "dpki"                             // 链码名称
-	endpoints     = []string{"peer0.CA1", "peer1.CA1"} // 要发送交易的节点
+	sdk           *fabsdk.FabricSDK       // Fabric SDK
+	channelName   = "appchannel"          // 通道名称
+	username      = "Admin"               // 用户
+	chainCodeName = "dpki"                // 链码名称
+	endpoints     = []string{"peer0.CA1"} // 要发送交易的节点
 )
 
 // init 初始化

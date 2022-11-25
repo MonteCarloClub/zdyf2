@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -18,28 +17,34 @@ import (
 	"github.com/go-redis/redis"
 )
 
+type FabricInfo struct {
+	ABSUID       []byte
+	SerialNumber []byte
+	Cert         []byte
+}
+
 var (
-	gPort          *int
-	Version        string
-	IssuerName     string
-	CertificateMap map[string]CertificateResponse
-	UserID         map[string]string
-	gRWLock        sync.RWMutex
-	redisdb        *redis.Client
-	CAPort         int
-	CANum          int
-	RAbase         int
-	validHour      time.Duration
+	gPort      *int
+	Version    string
+	IssuerName string
+	// CertificateMap map[string]CertificateResponse
+	// UserID         map[string]string
+	gRWLock   sync.RWMutex
+	redisdb   *redis.Client
+	CAPort    int
+	CANum     int
+	RAbase    int
+	validHour time.Duration
+	fbWorker  chan *FabricInfo
 )
 
 func init() {
 	gPort = flag.Int("port", 8000, "ra server port.")
 	Version = "1.0"
 	raName := flag.Int("name", 0, "ra name")
-	CertificateMap = make(map[string]CertificateResponse)
-	UserID = make(map[string]string)
+	// CertificateMap = make(map[string]CertificateResponse)
+	// UserID = make(map[string]string)
 	flag.Parse()
-	println(*raName)
 	IssuerName = "RA-" + strconv.Itoa(*raName)
 	RAbase = *raName
 	redisdb = redis.NewClient(&redis.Options{
@@ -50,6 +55,8 @@ func init() {
 	CAPort = 0      //CA的Port, 每调用一次CA， CAport + 1;
 	CANum = 10      //每个RA对应的CA数量
 	validHour = 720 //有效期时间小时数
+	fbWorker = make(chan *FabricInfo, 10000)
+	go fabricStore(fbWorker)
 }
 
 // 申请证书
@@ -97,26 +104,47 @@ func ApplyForABSCertificate(w http.ResponseWriter, r *http.Request) {
 
 	bData, _ := json.Marshal(res)
 	_, _ = fmt.Fprintf(w, string(bData))
-	gRWLock.Lock()
-	CertificateMap[serialNumber] = res
-	UserID[uid] = serialNumber
-
+	// gRWLock.Lock()
+	// gRWLock.Unlock()
+	// CertificateMap[serialNumber] = res
+	// UserID[uid] = serialNumber
+	// start := time.Now().UnixNano()
 	// redis store
-	redisdb.Set(serialNumber, string(bData), time.Minute*100000)
-
-	//fabric store
-	args := make([][]byte, 0)
-	args = append(args, []byte(c.ABSUID))
-	args = append(args, []byte(c.SerialNumber))
-	args = append(args, []byte(b))
-	fabircResp, err := ChannelExecute("setCertificate", args)
-	if err != nil {
-		log.Printf("Fabric setCertificate: %s 失败 %s", fmt.Sprintln(c.SerialNumber), err.Error())
-		return
-	} else {
-		log.Printf("Fabric setCertificate: %s 成功 %s", fmt.Sprintln(c.SerialNumber), fabircResp)
+	redisdb.Set(serialNumber, string(bData), time.Hour*validHour)
+	// end := time.Now().UnixNano()
+	// log.Printf("Redis Total time: %f", float64(end-start)/1e9)
+	// fabric store
+	fbInfo := FabricInfo{
+		ABSUID:       []byte(c.ABSUID),
+		SerialNumber: []byte(c.SerialNumber),
+		Cert:         []byte(b),
 	}
-	gRWLock.Unlock()
+	fbWorker <- &fbInfo
+
+}
+
+func fabricStore(fbInfochan chan *FabricInfo) {
+	var err error
+	for {
+		fbInfo := <-fbInfochan
+		go func(fbInfo *FabricInfo) {
+			if fbInfo == nil {
+				return
+			}
+			args := make([][]byte, 0)
+			args = append(args, fbInfo.ABSUID)
+			args = append(args, fbInfo.SerialNumber)
+			args = append(args, fbInfo.Cert)
+			_, err = ChannelExecute("setCertificate", args)
+			if err != nil {
+				// log.Printf("Fabric setCertificate: %s 失败 %s", fbInfo.SerialNumber, err.Error())
+				fbWorker <- fbInfo
+				time.Sleep(time.Millisecond * 1000)
+			} else {
+				log.Printf("Fabric setCertificate: %s 成功", fbInfo.SerialNumber)
+			}
+		}(fbInfo)
+	}
 }
 
 // 验证证书
@@ -126,9 +154,8 @@ func VerifyABSCertificate(w http.ResponseWriter, r *http.Request) {
 	_ = r.ParseForm()
 	serialNumber := r.Form.Get("no")
 
-	gRWLock.RLock()
-	defer gRWLock.RUnlock()
-	//TODO 验证是否成功
+	// gRWLock.RLock()
+	// defer gRWLock.RUnlock()
 	// if res, ok := CertificateMap[serialNumber]; !ok {
 	rawData, err := redisdb.Get(serialNumber).Result()
 	if err != nil {
@@ -201,6 +228,7 @@ func VerifyABSCert(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, err.Error(), 500)
 	} else {
 		SNumber := cert.CertificateContent.SerialNumber
+		log.Println("[Verify]Complete Certificate verify:", SNumber)
 		rawData, err := redisdb.Get(SNumber).Result()
 		if err != nil {
 			http.Error(writer, "The certificate is invalid", 500)
@@ -238,8 +266,8 @@ func GetCertificate(w http.ResponseWriter, r *http.Request) {
 	_ = r.ParseForm()
 	serialNumber := r.Form.Get("no")
 
-	gRWLock.RLock()
-	defer gRWLock.RUnlock()
+	// gRWLock.RLock()
+	// defer gRWLock.RUnlock()
 
 	rawData, err := redisdb.Get(serialNumber).Result()
 	if err != nil {
@@ -262,8 +290,8 @@ func RevokeABSCertificate(w http.ResponseWriter, r *http.Request) {
 	_ = r.ParseForm()
 	serialNumber := r.Form.Get("no")
 
-	gRWLock.RLock()
-	defer gRWLock.RUnlock()
+	// gRWLock.RLock()
+	// defer gRWLock.RUnlock()
 	result, err := redisdb.Del(serialNumber).Result()
 	if err != nil {
 		log.Printf("删除 key: %s 失败 %s", fmt.Sprintln(serialNumber), err.Error())
@@ -297,17 +325,17 @@ func GetCertificateNumber(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 	}
-	gRWLock.RLock()
+	// gRWLock.RLock()
 	http.Error(w, strconv.Itoa(n), 200)
-	gRWLock.RUnlock()
+	// gRWLock.RUnlock()
 }
 
 func GetCertificateFromFabric(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	_ = r.ParseForm()
 	serialNumber := r.Form.Get("no")
-	gRWLock.RLock()
-	defer gRWLock.RUnlock()
+	// gRWLock.RLock()
+	// defer gRWLock.RUnlock()
 	args := make([][]byte, 0)
 	args = append(args, []byte(serialNumber))
 	resp, err := ChannelExecute("getCertificate", args)
@@ -376,7 +404,7 @@ func IotDevInit(w http.ResponseWriter, r *http.Request) {
 
 		var cer CertificateResponse
 		_ = json.Unmarshal(s, &cer)
-		UserID[uid] = cer.CertificateContent.SerialNumber
+		// UserID[uid] = cer.CertificateContent.SerialNumber
 		a[i] = cer
 		resp.Body.Close()
 	}
@@ -386,41 +414,41 @@ func IotDevInit(w http.ResponseWriter, r *http.Request) {
 }
 
 // 通过UID撤销证书
-func RevokeABSCertificateByUID(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+// func RevokeABSCertificateByUID(w http.ResponseWriter, r *http.Request) {
+// 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
-	_ = r.ParseForm()
-	uid := r.Form.Get("userid")
-	serialNumber := UserID[uid]
+// 	_ = r.ParseForm()
+// 	uid := r.Form.Get("userid")
+// 	serialNumber := UserID[uid]
 
-	gRWLock.RLock()
-	defer gRWLock.RUnlock()
+// 	gRWLock.RLock()
+// 	defer gRWLock.RUnlock()
 
-	if _, ok := CertificateMap[serialNumber]; !ok {
-		s := time.Unix(time.Now().Unix(), 0).Format("2006-01-02 15:04:05")
+// 	if _, ok := CertificateMap[serialNumber]; !ok {
+// 		s := time.Unix(time.Now().Unix(), 0).Format("2006-01-02 15:04:05")
 
-		resp := RevokeResponse{
-			Status:       "Certificate does not exist.",
-			Timestamp:    s,
-			Tx:           Sha256(strconv.FormatInt(time.Now().UnixNano(), 10)),
-			SerialNumber: serialNumber,
-		}
-		bData, _ := json.Marshal(resp)
-		_, _ = fmt.Fprintf(w, string(bData))
-	} else {
-		delete(CertificateMap, serialNumber)
-		delete(UserID, uid)
-		s := time.Unix(time.Now().Unix(), 0).Format("2006-01-02 15:04:05")
-		resp := RevokeResponse{
-			Status:       "OK.",
-			Timestamp:    s,
-			Tx:           Sha256(strconv.FormatInt(time.Now().UnixNano(), 10)),
-			SerialNumber: serialNumber,
-		}
-		bData, _ := json.Marshal(resp)
-		_, _ = fmt.Fprintf(w, string(bData))
-	}
-}
+// 		resp := RevokeResponse{
+// 			Status:       "Certificate does not exist.",
+// 			Timestamp:    s,
+// 			Tx:           Sha256(strconv.FormatInt(time.Now().UnixNano(), 10)),
+// 			SerialNumber: serialNumber,
+// 		}
+// 		bData, _ := json.Marshal(resp)
+// 		_, _ = fmt.Fprintf(w, string(bData))
+// 	} else {
+// 		delete(CertificateMap, serialNumber)
+// 		delete(UserID, uid)
+// 		s := time.Unix(time.Now().Unix(), 0).Format("2006-01-02 15:04:05")
+// 		resp := RevokeResponse{
+// 			Status:       "OK.",
+// 			Timestamp:    s,
+// 			Tx:           Sha256(strconv.FormatInt(time.Now().UnixNano(), 10)),
+// 			SerialNumber: serialNumber,
+// 		}
+// 		bData, _ := json.Marshal(resp)
+// 		_, _ = fmt.Fprintf(w, string(bData))
+// 	}
+// }
 
 func Sha256(src string) string {
 	m := sha256.New()
@@ -430,32 +458,32 @@ func Sha256(src string) string {
 }
 
 // 登录界面
-func login(w http.ResponseWriter, r *http.Request) {
-	str, err := ioutil.ReadFile("./template/index.html")
-	s, _ := os.Getwd()
-	if err != nil {
-		http.Error(w, s, 500)
-		return
-	}
-	_, _ = w.Write([]byte(str))
-}
+// func login(w http.ResponseWriter, r *http.Request) {
+// 	str, err := ioutil.ReadFile("./template/index.html")
+// 	s, _ := os.Getwd()
+// 	if err != nil {
+// 		http.Error(w, s, 500)
+// 		return
+// 	}
+// 	_, _ = w.Write([]byte(str))
+// }
 
-// 通过用户 UID 获取证书
-func GetCertificateByUID(w http.ResponseWriter, r *http.Request) {
-	_ = r.ParseForm()
-	uid := r.Form.Get("uid")
-	serialNumber := UserID[uid]
+// // 通过用户 UID 获取证书
+// func GetCertificateByUID(w http.ResponseWriter, r *http.Request) {
+// 	_ = r.ParseForm()
+// 	uid := r.Form.Get("uid")
+// 	serialNumber := UserID[uid]
 
-	gRWLock.RLock()
-	defer gRWLock.RUnlock()
+// 	gRWLock.RLock()
+// 	defer gRWLock.RUnlock()
 
-	if res, ok := CertificateMap[serialNumber]; !ok {
-		http.Error(w, "Certificate does not exist.", 500)
-	} else {
-		bData, _ := json.Marshal(res)
-		_, _ = fmt.Fprintf(w, string(bData))
-	}
-}
+// 	if res, ok := CertificateMap[serialNumber]; !ok {
+// 		http.Error(w, "Certificate does not exist.", 500)
+// 	} else {
+// 		bData, _ := json.Marshal(res)
+// 		_, _ = fmt.Fprintf(w, string(bData))
+// 	}
+// }
 
 func main() {
 	http.HandleFunc("/ApplyForABSCertificate", ApplyForABSCertificate)
@@ -463,10 +491,6 @@ func main() {
 	http.HandleFunc("/VerifyABSCert", VerifyABSCert)
 
 	http.HandleFunc("/RevokeABSCertificate", RevokeABSCertificate)
-
-	//todo
-	http.HandleFunc("/RevokeABSCertificateByUID", RevokeABSCertificateByUID)
-	http.HandleFunc("/GetCertificateByUID", GetCertificateByUID)
 
 	http.HandleFunc("/GetCertificateNumber", GetCertificateNumber)
 	http.HandleFunc("/GetCertificate", GetCertificate)
@@ -476,6 +500,8 @@ func main() {
 	http.HandleFunc("/IoTDevTest", IoTDevTest)
 	http.HandleFunc("/IotDevInit", IotDevInit)
 
+	// http.HandleFunc("/RevokeABSCertificateByUID", RevokeABSCertificateByUID)
+	// http.HandleFunc("/GetCertificateByUID", GetCertificateByUID)
 	// http.HandleFunc("/login", login)
 	// http.Handle("/", http.FileServer(http.Dir("template")))
 

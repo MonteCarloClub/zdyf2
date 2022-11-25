@@ -16,17 +16,21 @@ Build() {
 }
 
 RunCA() {
+  cd ./CA
   for i in $(seq 1 1 $1)
   do
-    nohup ./CA/$CA -port=$((9000+$i)) &
+    nohup ./$CA -port=$((9000+$i)) &
   done
+  cd ..
 }
 
 RunRA() {
+  cd ./RA
   for i in $(seq 1 1 $1)
   do
-    nohup ./RA/$RA -port=$((8000+$i)) -name=$(($i)) &
+    nohup ./$RA -port=$((8000+$i)) -name=$(($i)) &
   done
+  cd ..
 }
 
 RunAll() {
