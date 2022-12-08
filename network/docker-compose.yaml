@@ -1,0 +1,153 @@
+version: '2.1'
+
+volumes:
+  orderer.com:
+  peer0.CA1:
+  peer1.CA1:
+  peer0.CA2:
+  peer1.CA2:
+
+networks:
+  fabric_network:
+    name: fabric_network
+
+services:
+  # 排序服务节点
+  orderer.com:
+    container_name: orderer.com
+    image: hyperledger/fabric-orderer
+    environment:
+      - GODEBUG=netdns=go
+      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+      - ORDERER_GENERAL_GENESISMETHOD=file
+      - ORDERER_GENERAL_GENESISFILE=/etc/hyperledger/config/genesis.block # 注入创世区块
+      - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
+      - ORDERER_GENERAL_LOCALMSPDIR=/etc/hyperledger/orderer/msp # 证书相关
+    command: orderer
+    ports:
+      - "7050:7050"
+    volumes: # 挂载由cryptogen和configtxgen生成的证书文件以及创世区块
+      - ./config/genesis.block:/etc/hyperledger/config/genesis.block
+      - ./crypto-config/ordererOrganizations/com/orderers/orderer.com/:/etc/hyperledger/orderer
+      - orderer.com:/var/hyperledger/production/orderer
+    networks:
+      - fabric_network
+
+  #  CA1 组织 peer0 节点
+  peer0.CA1:
+    extends:
+      file: docker-compose-base.yaml
+      service: peer-base
+    container_name: peer0.CA1
+    environment:
+      - CORE_PEER_ID=peer0.CA1
+      - CORE_PEER_LOCALMSPID=CA1MSP
+      - CORE_PEER_ADDRESS=peer0.CA1:7051
+    ports:
+      - "7051:7051" # grpc服务端口
+      - "7053:7053" # eventhub端口
+    volumes:
+      - ./crypto-config/peerOrganizations/CA1/peers/peer0.CA1:/etc/hyperledger/peer
+      - peer0.CA1:/var/hyperledger/production
+    depends_on:
+      - orderer.com
+      - couchdb
+
+  #  CA1 组织 peer1 节点
+  peer1.CA1:
+    extends:
+      file: docker-compose-base.yaml
+      service: peer-base
+    container_name: peer1.CA1
+    environment:
+      - CORE_PEER_ID=peer1.CA1
+      - CORE_PEER_LOCALMSPID=CA1MSP
+      - CORE_PEER_ADDRESS=peer1.CA1:7051
+    ports:
+      - "17051:7051"
+      - "17053:7053"
+    volumes:
+      - ./crypto-config/peerOrganizations/CA1/peers/peer1.CA1:/etc/hyperledger/peer
+      - peer1.CA1:/var/hyperledger/production
+    depends_on:
+      - orderer.com
+      - couchdb
+
+  #  CA2 组织 peer0 节点
+  peer0.CA2:
+    extends:
+      file: docker-compose-base.yaml
+      service: peer-base
+    container_name: peer0.CA2
+    environment:
+      - CORE_PEER_ID=peer0.CA2
+      - CORE_PEER_LOCALMSPID=CA2MSP
+      - CORE_PEER_ADDRESS=peer0.CA2:7051
+    ports:
+      - "27051:7051"
+      - "27053:7053"
+    volumes:
+      - ./crypto-config/peerOrganizations/CA2/peers/peer0.CA2:/etc/hyperledger/peer
+      - peer0.CA2:/var/hyperledger/production
+    depends_on:
+      - orderer.com
+      - couchdb
+  #  CA2 组织 peer1 节点
+  peer1.CA2:
+    extends:
+      file: docker-compose-base.yaml
+      service: peer-base
+    container_name: peer1.CA2
+    environment:
+      - CORE_PEER_ID=peer1.CA2
+      - CORE_PEER_LOCALMSPID=CA2MSP
+      - CORE_PEER_ADDRESS=peer1.CA2:7051
+    ports:
+      - "37051:7051"
+      - "37053:7053"
+    volumes:
+      - ./crypto-config/peerOrganizations/CA2/peers/peer1.CA2:/etc/hyperledger/peer
+      - peer1.CA2:/var/hyperledger/production
+    depends_on:
+      - orderer.com
+      - couchdb
+
+  # 客户端节点
+  cli:
+    container_name: cli
+    image: hyperledger/fabric-tools:1.4.12
+    tty: true
+    environment:
+      # go 环境设置
+      - GO111MODULE=auto
+      - GOPROXY=https://goproxy.cn
+      - CORE_PEER_ID=cli
+    command: /bin/bash
+    volumes:
+      - ./config:/etc/hyperledger/config
+      - ./crypto-config/peerOrganizations/CA1/:/etc/hyperledger/peer/CA1
+      - ./crypto-config/peerOrganizations/CA2/:/etc/hyperledger/peer/CA2
+      - ./../chaincode:/opt/gopath/src/chaincode # 链码路径注入
+    networks:
+      - fabric_network
+    depends_on:
+      - orderer.com
+      - peer0.CA1
+      - peer1.CA1
+      - peer0.CA2
+      - peer1.CA2
+
+  couchdb:
+    container_name: couchdb
+    image: hyperledger/fabric-couchdb
+        # Populate the COUCHDB_USER and COUCHDB_PASSWORD to set an admin user and password
+        # for CouchDB.  This will prevent CouchDB from operating in an "Admin Party" mode.
+    environment:
+      - COUCHDB_USER=
+      - COUCHDB_PASSWORD=
+            # Comment/Uncomment the port mapping if you want to hide/expose the CouchDB service,
+            # for example map it to utilize Fauxton User Interface in dev environments.
+    ports:
+      - "5984:5984"
+    networks:
+      - fabric_network

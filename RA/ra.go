@@ -79,13 +79,13 @@ func ApplyForABSCertificate(w http.ResponseWriter, r *http.Request) {
 		ABSUID:         uid,
 		ABSAttribute:   attribute,
 	}
-
 	b, _ := json.Marshal(c)
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Post("http://127.0.0.1:"+strconv.Itoa(CAPort+9000+(RAbase-1)*CANum+1)+"/SingleGenerate", "application/json", bytes.NewReader(b))
 	CAPort = (CAPort + 1) % CANum
 	c.IssuerCA = IssuerName + "-CA-" + strconv.Itoa(CAPort+9000+(RAbase-1)*CANum+1)
 	if err != nil {
+		log.Printf("[Apply]CA SingleGenerate: %s 失败", c.SerialNumber)
 		http.Error(w, err.Error(), 500)
 		return
 	}
@@ -93,6 +93,7 @@ func ApplyForABSCertificate(w http.ResponseWriter, r *http.Request) {
 
 	sign, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		log.Printf("[Apply]CA SingleGenerate read info: %s 失败", c.SerialNumber)
 		http.Error(w, err.Error(), 500)
 		return
 	}
@@ -138,10 +139,10 @@ func fabricStore(fbInfochan chan *FabricInfo) {
 			_, err = ChannelExecute("setCertificate", args)
 			if err != nil {
 				// log.Printf("Fabric setCertificate: %s 失败 %s", fbInfo.SerialNumber, err.Error())
-				fbWorker <- fbInfo
 				time.Sleep(time.Millisecond * 1000)
+				fbWorker <- fbInfo
 			} else {
-				log.Printf("Fabric setCertificate: %s 成功", fbInfo.SerialNumber)
+				log.Printf("[Apply]Fabric setCertificate: %s 成功", fbInfo.SerialNumber)
 			}
 		}(fbInfo)
 	}
@@ -154,35 +155,10 @@ func VerifyABSCertificate(w http.ResponseWriter, r *http.Request) {
 	_ = r.ParseForm()
 	serialNumber := r.Form.Get("no")
 
-	// gRWLock.RLock()
-	// defer gRWLock.RUnlock()
-	// if res, ok := CertificateMap[serialNumber]; !ok {
 	rawData, err := redisdb.Get(serialNumber).Result()
 	if err != nil {
 		http.Error(w, "Certificate does not exist.", 500)
 	} else {
-		// valid := res.CertificateContent.ValidityPeriod
-		// //fmt.Println(valid)
-		// //fmt.Println(time.Now().UnixNano())
-		// //todo 过期时间
-		// if valid == strconv.FormatInt(time.Now().UnixNano(), 10) {
-		// 	http.Error(w, "The certificate has expired.", 500)
-		// } else {
-		// 	var res CertificateResponse
-		// 	if err := json.Unmarshal([]byte(rawData), &res); err != nil {
-		// 		return
-		// 	}
-		// 	sign := res.ABSSign
-		// 	client := &http.Client{Timeout: 10 * time.Second}
-		// 	resp, err := client.Post("http://127.0.0.1:9001/SingleVerify", "application/json", bytes.NewReader([]byte(sign)))
-		// 	if err != nil {
-		// 		http.Error(w, err.Error(), 500)
-		// 		return
-		// 	}
-		// 	defer resp.Body.Close()
-
-		// 	_, _ = fmt.Fprintf(w, "OK.")
-		// }
 		var res CertificateResponse
 		if err := json.Unmarshal([]byte(rawData), &res); err != nil {
 			return
@@ -232,6 +208,7 @@ func VerifyABSCert(writer http.ResponseWriter, request *http.Request) {
 		rawData, err := redisdb.Get(SNumber).Result()
 		if err != nil {
 			http.Error(writer, "The certificate is invalid", 500)
+			return
 		}
 		if rawData == string(rawCert) {
 			// _, _ = fmt.Fprintf(writer, "True compare")
@@ -252,6 +229,7 @@ func VerifyABSCert(writer http.ResponseWriter, request *http.Request) {
 			_, _ = fmt.Fprintf(writer, "True")
 
 		} else {
+			log.Println("[Verify] Certificate verify failed,certificate is invalid:")
 			http.Error(writer, "The certificate is invalid", 500)
 			return
 			// _, _ = fmt.Fprintf(writer, "False compare")
@@ -292,20 +270,14 @@ func RevokeABSCertificate(w http.ResponseWriter, r *http.Request) {
 
 	// gRWLock.RLock()
 	// defer gRWLock.RUnlock()
-	result, err := redisdb.Del(serialNumber).Result()
+	_, err := redisdb.Del(serialNumber).Result()
 	if err != nil {
-		log.Printf("删除 key: %s 失败 %s", fmt.Sprintln(serialNumber), err.Error())
+		log.Printf("[Revoke]撤销证书: %s 失败 %s", serialNumber, err.Error())
 		http.Error(w, "Certificate does not exist.", 500)
 	} else {
-		log.Printf("删除 key: %s 成功 %s", fmt.Sprintln(serialNumber), result)
-		_, _ = fmt.Fprintf(w, "OK.")
+		log.Printf("[Revoke]撤销证书: %s 成功", serialNumber)
+		_, _ = fmt.Fprintf(w, "Recoke OK.")
 	}
-	// if _, ok := CertificateMap[serialNumber]; !ok {
-	// 	http.Error(w, "Certificate does not exist.", 500)
-	// } else {
-	// 	delete(CertificateMap, serialNumber)
-	// 	_, _ = fmt.Fprintf(w, "OK.")
-	// }
 }
 
 // 获取当前证书数量
