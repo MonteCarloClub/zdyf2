@@ -48,7 +48,7 @@ func init() {
 	IssuerName = "RA-" + strconv.Itoa(*raName)
 	RAbase = *raName
 	redisdb = redis.NewClient(&redis.Options{
-		Addr:     "10.176.40.47:6379", // 指定
+		Addr:     "127.0.0.1:6379", // 指定
 		Password: "",
 		DB:       0,
 	})

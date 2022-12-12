@@ -24,6 +24,7 @@ Decentralized Public Key Infrastructure Based on Attribute-Based Signature \
 ## 使用
 路由可以改为{Nginx服务器}/dpki
 当前Nginx为10.176.40.46
+修改RA/ra.go redis服务器地址，默认为本机
 
 ### 证书申请
 http://{Nginx服务器}/dpki/ApplyForABSCertificate?uid={}&&attribute={} \

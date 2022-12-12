@@ -21,6 +21,7 @@ var (
 	gRWLock      sync.RWMutex
 	Certs        []Certificate
 	Certificates []string
+	NginxServer  string
 )
 
 type Certificate struct {
@@ -33,6 +34,11 @@ type Certificate struct {
 	ABSUID         string `json:"ABSUID"`
 	ABSAttribute   string `json:"ABSAttribute"`
 }
+
+func init() {
+	NginxServer = "http://10.176.40.46"
+}
+
 type CertificateResponse struct {
 	CertificateContent Certificate `json:"certificate"`
 	ABSSign            string      `json:"absSignature"`
@@ -41,7 +47,7 @@ type CertificateResponse struct {
 func GenTest(uid string) string {
 	client := &http.Client{Timeout: 10 * time.Second}
 
-	resp, err := client.Get("http://10.176.40.46/dpki/ApplyForABSCertificate?uid=" + uid)
+	resp, err := client.Get(NginxServer + "/dpki/ApplyForABSCertificate?uid=" + uid)
 	// resp, err := client.Get("http://127.0.0.1:8001/ApplyForABSCertificate?uid=" + uid)
 	if err != nil {
 		return err.Error()
@@ -59,7 +65,7 @@ func GenTest(uid string) string {
 
 func VerifyTest(no string) bool {
 	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Get("http://10.176.40.46/dpki/VerifyABSCertificate?no=" + no)
+	resp, err := client.Get(NginxServer + "/dpki/VerifyABSCertificate?no=" + no)
 	// resp, err := client.Get("http://127.0.0.1:8001/VerifyABSCertificate?no=" + no)
 	if err != nil {
 		return false
@@ -70,7 +76,7 @@ func VerifyTest(no string) bool {
 }
 
 func completeVerifyTest(bytesData string) bool {
-	res, err := http.Post("http://10.176.40.46/dpki/VerifyABSCert", "application/json;charset=utf-8", bytes.NewBuffer([]byte(bytesData)))
+	res, err := http.Post(NginxServer+"/dpki/VerifyABSCert", "application/json;charset=utf-8", bytes.NewBuffer([]byte(bytesData)))
 	if err != nil {
 		return false
 	}
@@ -80,7 +86,7 @@ func completeVerifyTest(bytesData string) bool {
 
 func getCertTest(no string) bool {
 	client := &http.Client{Timeout: 10 * time.Second}
-	res, err := client.Get("http://10.176.40.46/dpki/GetCertificate?no=" + no)
+	res, err := client.Get(NginxServer + "/dpki/GetCertificate?no=" + no)
 	if err != nil {
 		return false
 	}
@@ -90,7 +96,7 @@ func getCertTest(no string) bool {
 
 func revokeCertTest(no string) bool {
 	client := &http.Client{Timeout: 10 * time.Second}
-	res, err := client.Get("http://10.176.40.46/dpki/RevokeABSCertificate?no=" + no)
+	res, err := client.Get(NginxServer + "/dpki/RevokeABSCertificate?no=" + no)
 	if err != nil {
 		return false
 	}
@@ -456,7 +462,7 @@ func HighConcurrencyTest() {
 				a[j*100+i] = float64(sEnd-sBegin) / 1e9
 			}(j, i)
 		}
-		// 查询请求 30&
+		// 查询请求 30%
 		for i := 0; i < 30; i += 1 {
 			wg.Add(1)
 			go func(j int, i int) {
