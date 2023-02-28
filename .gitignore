@@ -1,11 +1,12 @@
 nohup.out
-test/server
-test/certs.txt
-test/certificates.txt
+Test/server
+Test/certs.txt
+Test/certificates.txt
 CA/abs_server_ca
 RA/abs_server_ra
 RA/nohup.out
 CA/nohup.out
 Client/abs_client
 template
-/test/chaincode-sdk-test
+Test/chaincode-sdk-test
+redis/data/*
