@@ -5,7 +5,8 @@ Decentralized Public Key Infrastructure Based on Attribute-Based Signature \
 ## 编译 & 运行
 需要有 Go 环境，fabric环境, 配置Nginx负载均衡，启动docker环境
 > systemctl start docker
-=======
+### 参数修改
+修改./RA/config.yaml 中的 zdfy2 路径为相应的完整路径
 ### make
 ./build.sh build
 
