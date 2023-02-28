@@ -19,7 +19,7 @@ var (
 func init() {
 	// 通过配置文件初始化SDK
 	var err error
-	sdk, err = fabsdk.New(config.FromFile("/home/zdyf/fn/ABS-DPKI/RA/config.yaml"))
+	sdk, err = fabsdk.New(config.FromFile("/home/zdyf/fn/dpki/ABS-DPKI/RA/config.yaml"))
 	if err != nil {
 		panic(err)
 	}

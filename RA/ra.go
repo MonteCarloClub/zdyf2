@@ -138,7 +138,7 @@ func fabricStore(fbInfochan chan *FabricInfo) {
 			args = append(args, fbInfo.Cert)
 			_, err = ChannelExecute("setCertificate", args)
 			if err != nil {
-				// log.Printf("Fabric setCertificate: %s 失败 %s", fbInfo.SerialNumber, err.Error())
+				log.Printf("Fabric setCertificate: %s 失败 %s", fbInfo.SerialNumber, err.Error())
 				time.Sleep(time.Millisecond * 1000)
 				fbWorker <- fbInfo
 			} else {
@@ -207,7 +207,7 @@ func VerifyABSCert(writer http.ResponseWriter, request *http.Request) {
 		log.Println("[Verify]Complete Certificate verify:", SNumber)
 		rawData, err := redisdb.Get(SNumber).Result()
 		if err != nil {
-			http.Error(writer, "The certificate is invalid", 500)
+			http.Error(writer, "The certificate is invalid.", 500)
 			return
 		}
 		if rawData == string(rawCert) {
@@ -230,7 +230,7 @@ func VerifyABSCert(writer http.ResponseWriter, request *http.Request) {
 
 		} else {
 			log.Println("[Verify] Certificate verify failed,certificate is invalid:")
-			http.Error(writer, "The certificate is invalid", 500)
+			http.Error(writer, "The certificate is invalid.", 500)
 			return
 			// _, _ = fmt.Fprintf(writer, "False compare")
 		}
@@ -276,7 +276,7 @@ func RevokeABSCertificate(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Certificate does not exist.", 500)
 	} else {
 		log.Printf("[Revoke]撤销证书: %s 成功", serialNumber)
-		_, _ = fmt.Fprintf(w, "Recoke OK.")
+		_, _ = fmt.Fprintf(w, "Revoke OK.")
 	}
 }
 
