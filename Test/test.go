@@ -36,7 +36,7 @@ type Certificate struct {
 }
 
 func init() {
-	NginxServer = "http://10.176.40.46"
+	NginxServer = "127.0.0.1"
 }
 
 type CertificateResponse struct {

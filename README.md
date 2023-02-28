@@ -5,6 +5,7 @@ Decentralized Public Key Infrastructure Based on Attribute-Based Signature \
 ## 编译 & 运行
 需要有 Go 环境，fabric环境, 配置Nginx负载均衡，启动docker环境
 > systemctl start docker
+=======
 ### make
 ./build.sh build
 
