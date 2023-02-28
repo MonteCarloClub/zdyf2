@@ -2,6 +2,7 @@ nohup.out
 Test/server
 Test/certs.txt
 Test/certificates.txt
+Test/dpki_test
 CA/abs_server_ca
 RA/abs_server_ra
 RA/nohup.out
