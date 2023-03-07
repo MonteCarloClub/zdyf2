@@ -11,7 +11,7 @@ export default defineConfig({
     },
   },
   // 打包后的根路径
-  base: "/",
+  base: "/cert/",
   // 打包产物存放的目录
   // build: {
   //   outDir: '../static'
@@ -20,7 +20,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/dev": {
-        target: 'http://10.176.40.47/dpki',
+        target: "http://10.176.40.47/dpki",
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/dev/, ""),

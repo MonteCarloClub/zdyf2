@@ -4,6 +4,7 @@ import CertDetail from "@/components/CertDetail.vue";
 import SearchInput from "@/components/SearchInput.vue";
 import { list, revoke } from "@/api/cert";
 import { Modal, message } from "ant-design-vue";
+import { SEARCH_PLACE_HOLDER } from "@/common/constants";
 
 const certs = ref<API.Cert[]>([]);
 
@@ -19,7 +20,7 @@ const table = computed(() =>
     const row: API.Cert & {
       key?: string;
     } = data;
-    if (data.hasOwnProperty('key')) {
+    if (data.hasOwnProperty("key")) {
       row.key = index.toString();
     }
     return row;
@@ -41,6 +42,12 @@ const columns: Column[] = [
     dataIndex: "serialNumber",
     width: 160,
     title: "证书序号",
+  },
+  {
+    key: "issuerCA",
+    dataIndex: "issuerCA",
+    width: 160,
+    title: "签发机构",
   },
   { key: "version", dataIndex: "version", width: 80, title: "版本" },
   {
@@ -85,8 +92,8 @@ function revokeCert(record: API.Cert) {
         );
       }
     })
-    .catch(err => {
-        message.error(err);
+    .catch((err) => {
+      message.error(err);
     })
     .finally(() => {
       revokingCertNumber.value = "";
@@ -96,25 +103,34 @@ function revokeCert(record: API.Cert) {
 
 <template>
   <div class="panel">
-    <SearchInput :dynamic-placeholder="false"/>
+    <SearchInput
+      :dynamic-placeholder="false"
+      :placeholder="SEARCH_PLACE_HOLDER"
+    />
   </div>
-  <a-table :columns="columns" :data-source="table" size="middle">
-    <template #bodyCell="{ column, text, record }">
-      <template v-if="column.key === 'operation'">
-        <span>
-          <a-button
-            danger
-            @click="deleteRow(record)"
-            :loading="record.serialNumber === revokingCertNumber"
-          >
-            撤销证书
-          </a-button>
-          <a-button type="link" @click="viewDetail(record)"> 详情 </a-button>
-        </span>
+  <div class="container">
+    <a-table
+      :columns="columns"
+      :data-source="table"
+      size="middle"
+      :pagination="{ position: ['bottomCenter'] }"
+    >
+      <template #bodyCell="{ column, text, record }">
+        <template v-if="column.key === 'operation'">
+          <span>
+            <a-button
+              danger
+              @click="deleteRow(record)"
+              :loading="record.serialNumber === revokingCertNumber"
+            >
+              撤销
+            </a-button>
+            <a-button type="link" @click="viewDetail(record)"> 详情 </a-button>
+          </span>
+        </template>
       </template>
-    </template>
-  </a-table>
-
+    </a-table>
+  </div>
   <a-modal v-model:visible="certDetailFormVisible" title="证书详情">
     <template #footer>
       <a-button
@@ -134,5 +150,9 @@ function revokeCert(record: API.Cert) {
   text-align: left;
   width: 600px;
   margin: 0 auto 22px;
+}
+
+.container {
+  margin: 0 32px;
 }
 </style>
