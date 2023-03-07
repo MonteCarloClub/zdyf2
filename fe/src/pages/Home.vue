@@ -1,52 +1,50 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { useStore } from "@/store";
-
-const count = ref(0);
-
-const store = useStore();
-const increment = () => {
-  count.value++;
-  store.commit("increment");
-};
-
+import SearchInput from "@/components/SearchInput.vue";
+import CreateCert from "@/components/CreateCert.vue";
+import VerifyCert from "@/components/VerifyCert.vue";
+import { TITLE, SEARCH_PLACE_HOLDER } from "@/common/constants";
+import { ArrowRightOutlined } from "@ant-design/icons-vue";
 </script>
 
 <template>
-  <p>
-    Recommended IDE setup:
-    <a href="https://code.visualstudio.com/" target="_blank">VSCode</a>
-    +
-    <a href="https://github.com/johnsoncodehk/volar" target="_blank">Volar</a>
-  </p>
-
-  <p>
-    <a href="https://vitejs.dev/guide/features.html" target="_blank"
-      >Vite Docs</a
-    >
-    |
-    <a href="https://v3.vuejs.org/" target="_blank">Vue 3 Docs</a>
-  </p>
-
-  <a-button type="primary" @click="increment"
-    >click in this page: {{ count }}</a-button
-  >
+  <div class="background"></div>
+  <div class="main">
+    <div class="title">{{ TITLE }}</div>
+    <SearchInput :placeholder="SEARCH_PLACE_HOLDER" />
+    <div class="ops">
+      <CreateCert />
+      <VerifyCert />
+    </div>
+    <div class="link">
+      <router-link to="/certs"
+        >浏览所有证书
+        <arrow-right-outlined />
+      </router-link>
+    </div>
+  </div>
 </template>
 
 <style scoped>
-a {
-  color: #42b983;
+.main {
+  width: 520px;
+  margin: 20% auto 0;
 }
 
-label {
-  margin: 0 0.5em;
+.main .title {
+  font-size: 32px;
   font-weight: bold;
+  margin-bottom: 54px;
 }
 
-code {
-  background-color: #eee;
-  padding: 2px 4px;
-  border-radius: 4px;
-  color: #304455;
+.main .ops {
+  margin-top: 22px;
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+}
+.main .link {
+  margin-top: 32px;
+  font-size: 18px;
+  font-weight: bold;
 }
 </style>

@@ -14,5 +14,11 @@ Since TypeScript cannot handle type information for `.vue` imports, they are shi
 
 ``` bash
 $ pnpm install
-$ pnpm run dev
+$ pnpm start
+```
+
+## 打包
+
+``` bash
+$ pnpm run build
 ```

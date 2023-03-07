@@ -20,7 +20,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/dev": {
-        target: 'http://106.14.244.78:8888',
+        target: 'http://10.176.40.47/dpki',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/dev/, ""),

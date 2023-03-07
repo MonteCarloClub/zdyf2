@@ -19,14 +19,6 @@ service.interceptors.request.use(
   }
 );
 
-export function wrapResponse(data: any): API.Response {
-  return {
-    code: 1,
-    message: "mock",
-    data,
-  };
-}
-
 service.interceptors.response.use(
   (response) => {
     // Any status code that lie within the range of 2xx cause this function to trigger
@@ -52,10 +44,10 @@ export interface RequestOptions {
 export const request = async <T>(
   config: AxiosRequestConfig,
   options: RequestOptions = {}
-): Promise<API.Response<T>> => {
+): Promise<T> => {
   try {
     // 设置这里的 request 返回的数据格式为 Response<T>
-    const res = await service.request<API.Response<T>>(config);
+    const res = await service.request<T>(config);
 
     // 弹窗提示消息
     const { successMsg, errorMsg } = options;
