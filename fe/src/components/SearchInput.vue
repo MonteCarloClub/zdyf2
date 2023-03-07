@@ -7,10 +7,10 @@
       @keydown.enter="onSearch(searchKey)"
       :placeholder="dynamicPlaceholder ? '' : placeholder"
     />
-    <span class="bar"></span>
+    <span :class="`bar ${dark ? 'dark-bar' : 'light-bar'}`"></span>
     <a-button
       type="link"
-      class="search-icon"
+      :class="`search-icon ${dark ? 'dark-search-icon' : 'light-search-icon'}`"
       size="large"
       @click="onSearch(searchKey)"
     >
@@ -18,7 +18,11 @@
         <SearchOutlined />
       </template>
     </a-button>
-    <label v-if="dynamicPlaceholder">{{ placeholder }}</label>
+    <label
+      v-if="dynamicPlaceholder"
+      :style="{ color: dark ? '#DDD' : '#999' }"
+      >{{ placeholder }}</label
+    >
   </div>
 </template>
 
@@ -35,6 +39,10 @@ defineProps({
   dynamicPlaceholder: {
     type: Boolean,
     default: true,
+  },
+  dark: {
+    type: Boolean,
+    default: false,
   },
 });
 
@@ -87,7 +95,7 @@ input:valid ~ label {
   position: relative;
 }
 
-.bar:before {
+.light-bar:before {
   left: 0%;
   width: 0;
   bottom: 1px;
@@ -101,7 +109,25 @@ input:valid ~ label {
 }
 
 /* active state */
-input:focus ~ .bar:before {
+input:focus ~ .light-bar:before {
+  width: 100%;
+}
+
+.dark-bar:before {
+  left: 0%;
+  width: 0;
+  bottom: 1px;
+  content: "";
+  height: 2px;
+  position: absolute;
+  background: #dadada;
+  transition: 0.2s ease all;
+  -moz-transition: 0.2s ease all;
+  -webkit-transition: 0.2s ease all;
+}
+
+/* active state */
+input:focus ~ .dark-bar:before {
   width: 100%;
 }
 
@@ -109,7 +135,14 @@ input:focus ~ .bar:before {
   position: absolute;
   right: 0;
   bottom: 3px;
+}
+
+.light-search-icon {
   color: black;
+}
+
+.dark-search-icon {
+  color: #DDD;
 }
 
 .search-icon:hover {

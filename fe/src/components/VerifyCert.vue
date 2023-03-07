@@ -12,7 +12,9 @@ function verifyCert() {
             message.success("验证通过");
           }
         })
-        .catch(console.log);
+        .catch(() => {
+          message.error("未能通过验证");
+        });
     },
     (err) => {
       console.log(err);
@@ -23,5 +25,5 @@ function verifyCert() {
 </script>
 
 <template>
-  <a-button @click="verifyCert"> 验证本地证书 </a-button>
+  <a-button type="link" size="large" @click="verifyCert"> 验证本地证书 </a-button>
 </template>
