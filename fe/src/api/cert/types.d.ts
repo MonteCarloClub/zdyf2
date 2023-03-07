@@ -5,13 +5,12 @@ declare namespace API {
 
   type RevokeResponse = string | 'Revoke OK.';
 
-  type InfoParams = {
-    uid: string;
+  type QueryParams = {
+    no: string;
   };
 
   type ApplyParams = {
     uid: string;
-    attribute: string;
   };
 
   type Cert = {
@@ -24,4 +23,13 @@ declare namespace API {
     validityPeriod: string;
     version: string;
   };
+
+  type QueryResponse = {
+    absSignature: string;
+    certificate: Cert;
+  }
+
+  type VerifyParams = string;
+
+  type VerifyResponse = string;
 }

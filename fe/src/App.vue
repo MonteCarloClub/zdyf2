@@ -3,7 +3,8 @@
 </template>
 
 <script setup lang="ts">
-
+import { TITLE } from "@/common/constants";
+document.title = TITLE;
 </script>
 
 <style>

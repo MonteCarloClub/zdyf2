@@ -12,7 +12,7 @@ import type { Ref } from 'vue'
  * @returns 组合式函数
  */
 export function useFetchFactory<T extends Object, R>
-    (fetchMethod: (params: T) => Promise<API.Response<R>>) {
+    (fetchMethod: (params: T) => Promise<R>) {
 
     const data: Ref<R | null> = ref(null);
     const error: Ref<string | null> = ref(null);
@@ -25,7 +25,7 @@ export function useFetchFactory<T extends Object, R>
             error.value = null;
 
             fetchMethod(params)
-                .then((res) => data.value = res.data)
+                .then((res) => data.value = res)
                 .catch((err) => (error.value = err))
         }
 

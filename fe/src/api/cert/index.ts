@@ -28,10 +28,10 @@ export function revoke(params: API.RevokeParams) {
 /**
  * 查询证书详细信息
  */
-export function info(params: API.InfoParams) {
-    return request<API.Cert>(
+export function query(params: API.QueryParams) {
+    return request<API.QueryResponse>(
         {
-            url: '/GetCertificateByUID',
+            url: '/GetCertificate',
             method: 'get',
             params
         }
@@ -42,11 +42,25 @@ export function info(params: API.InfoParams) {
  * 申请证书
  */
 export function apply(params: API.ApplyParams) {
-    return request<any>(
+    return request<API.QueryResponse>(
         {
             url: '/ApplyForABSCertificate',
             method: 'get',
             params
+        }
+    );
+}
+
+/**
+ * 验证证书
+ */
+export function verify(data: API.VerifyParams) {
+    return request<API.VerifyResponse>(
+        {
+            url: '/VerifyABSCert',
+            method: 'post',
+            headers: { "Content-Type": "application/json-patch+json" },
+            data
         }
     );
 }
