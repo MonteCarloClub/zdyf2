@@ -44,13 +44,22 @@ RunAll() {
   RunRA $2
 }
 
+RunBe(){
+  RunCA $1
+  RunRA $2
+}
+
 RunTest(){
-  echo "申请及验证证书数量： 1000" 
+  echo "申请及验证证书数量： $1" 
   cd ./Test
-  ./$Test -n 1000
+  ./$Test -n $1
   cd ..
   echo "总计生成证书数量：" 
-  # curl "http://10.176.40.46/dpki/GetCertificateNumber"
+  curl "http://localhost/dpki/GetCertificateNumber"
+}
+
+killBe(){
+  pgrep abs_server_ | xargs kill -9
 }
 
 KillAll() {
@@ -61,7 +70,9 @@ KillAll() {
 if [ $1 == 'clean' ]; then Clean
 elif [ $1 == 'build' ]; then Build
 elif [ $1 == 'run' ]; then RunAll $2 $3
-elif [ $1 == 'test' ]; then RunTest
+elif [ $1 == 'test' ]; then RunTest $2
+elif [ $1 == 'runbe' ]; then RunBe $2 $3
+elif [ $1 == 'killbe' ]; then killBe
 elif [ $1 == 'stop' ]; then KillAll
 else echo "unknown command"
 fi

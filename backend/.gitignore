@@ -2,9 +2,10 @@ nohup.out
 Test/server
 Test/certs.txt
 Test/certificates.txt
-Test/dpki_test
 CA/abs_server_ca
 RA/abs_server_ra
+RA/redis/*
+RA/keystore/*
 RA/nohup.out
 CA/nohup.out
 Client/abs_client
