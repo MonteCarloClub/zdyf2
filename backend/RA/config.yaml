@@ -10,7 +10,7 @@ client:
     level: info
   # MSP证书的根路径
   cryptoconfig:
-    path: /home/zdyf/ABS-DPKI/zdfy2/network/crypto-config
+    path: /home/zdyf/fn/zdfy2/network/crypto-config
 
 # 通道定义
 channels:
@@ -32,7 +32,7 @@ channels:
 organizations:
   CA1:
     mspid: CA1MSP
-    cryptoPath: /home/zdyf/ABS-DPKI/zdfy2/network/crypto-config/peerOrganizations/CA1/users/{username}@CA1/msp
+    cryptoPath: /home/zdyf/fn/zdfy2/zdfy2/network/crypto-config/peerOrganizations/CA1/users/{username}@CA1/msp
     peers:
       - peer0.CA1
       - peer1.CA1

@@ -36,7 +36,7 @@ type Certificate struct {
 }
 
 func init() {
-	NginxServer = "127.0.0.1"
+	NginxServer = "http://localhost"
 }
 
 type CertificateResponse struct {
@@ -358,9 +358,12 @@ func completeVerify(num int) {
 	for {
 		jsonCert, err := reader.ReadString('\n')
 		if err == io.EOF {
+			certs = append(certs, jsonCert)
 			break
+		} else {
+			jsonCert = jsonCert[:len(jsonCert)-1]
+			certs = append(certs, jsonCert)
 		}
-		certs = append(certs, jsonCert)
 	}
 	file.Close()
 	//随机选取保存的证书进行验证
