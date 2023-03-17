@@ -103,12 +103,19 @@ function revokeCert(record: API.Cert) {
 
 <template>
   <div class="panel">
+    <div class="flex-expand nav">
+      <router-link to="/"> 首页 </router-link>
+    </div>
     <SearchInput
+      class="search-container"
       :dynamic-placeholder="false"
       :placeholder="SEARCH_PLACE_HOLDER"
     />
+    <div class="flex-expand nav" style="text-align: right;">
+      <router-link to="/create"> 创建证书 </router-link>
+    </div>
   </div>
-  <div class="container">
+  <div class="content">
     <a-table
       :columns="columns"
       :data-source="table"
@@ -147,12 +154,27 @@ function revokeCert(record: API.Cert) {
 
 <style scoped>
 .panel {
+  display: flex;
   text-align: left;
-  width: 600px;
-  margin: 0 auto 22px;
+  align-items: center;
+  margin: 0 32px 22px;
 }
 
-.container {
+.search-container {
+  width: 600px;
+}
+
+.flex-expand {
+  flex: 1;
+}
+
+.content {
   margin: 0 32px;
+}
+
+.nav a {
+  font-size: 22px;
+  color: black;
+  
 }
 </style>
