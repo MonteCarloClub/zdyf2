@@ -6,6 +6,7 @@
       v-model="searchKey"
       @keydown.enter="onSearch(searchKey)"
       :placeholder="dynamicPlaceholder ? '' : placeholder"
+      :style="dark ? 'color: white;':''"
     />
     <span :class="`bar ${dark ? 'dark-bar' : 'light-bar'}`"></span>
     <a-button
