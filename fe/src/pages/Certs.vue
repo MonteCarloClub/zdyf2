@@ -34,9 +34,16 @@ interface Column {
   width?: number;
   ellipsis?: boolean;
   align?: "left" | "center" | "right";
+  sorter?: (a: API.Cert, b: API.Cert) => number;
 }
 const columns: Column[] = [
-  { key: "ABSUID", dataIndex: "ABSUID", width: 100, title: "用户" },
+  {
+    key: "ABSUID",
+    dataIndex: "ABSUID",
+    width: 100,
+    title: "用户",
+    sorter: (a: API.Cert, b: API.Cert) => a.ABSUID.localeCompare(b.ABSUID),
+  },
   {
     key: "serialNumber",
     dataIndex: "serialNumber",
@@ -48,6 +55,7 @@ const columns: Column[] = [
     dataIndex: "issuerCA",
     width: 160,
     title: "签发机构",
+    sorter: (a: API.Cert, b: API.Cert) => a.issuerCA.localeCompare(b.issuerCA),
   },
   { key: "version", dataIndex: "version", width: 80, title: "版本" },
   {
@@ -106,30 +114,17 @@ function revokeCert(record: API.Cert) {
     <div class="flex-expand nav">
       <router-link to="/"> 首页 </router-link>
     </div>
-    <SearchInput
-      class="search-container"
-      :dynamic-placeholder="false"
-      :placeholder="SEARCH_PLACE_HOLDER"
-    />
+    <SearchInput class="search-container" :dynamic-placeholder="false" :placeholder="SEARCH_PLACE_HOLDER" />
     <div class="flex-expand nav" style="text-align: right;">
       <router-link to="/create"> 创建证书 </router-link>
     </div>
   </div>
   <div class="content">
-    <a-table
-      :columns="columns"
-      :data-source="table"
-      size="middle"
-      :pagination="{ position: ['bottomCenter'] }"
-    >
+    <a-table :columns="columns" :data-source="table" size="middle" :pagination="{ position: ['bottomCenter'] }">
       <template #bodyCell="{ column, text, record }">
         <template v-if="column.key === 'operation'">
           <span>
-            <a-button
-              danger
-              @click="deleteRow(record)"
-              :loading="record.serialNumber === revokingCertNumber"
-            >
+            <a-button danger @click="deleteRow(record)" :loading="record.serialNumber === revokingCertNumber">
               撤销
             </a-button>
             <a-button type="link" @click="viewDetail(record)"> 详情 </a-button>
@@ -140,11 +135,7 @@ function revokeCert(record: API.Cert) {
   </div>
   <a-modal v-model:visible="certDetailFormVisible" title="证书详情">
     <template #footer>
-      <a-button
-        key="submit"
-        type="primary"
-        @click="certDetailFormVisible = false"
-      >
+      <a-button key="submit" type="primary" @click="certDetailFormVisible = false">
         确认
       </a-button>
     </template>
@@ -175,6 +166,6 @@ function revokeCert(record: API.Cert) {
 .nav a {
   font-size: 22px;
   color: black;
-  
+
 }
 </style>
