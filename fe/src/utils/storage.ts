@@ -26,7 +26,7 @@ export function setStorage(key: string, obj: Nullable<StorageObj>): void {
  * @param key 键
  * @returns T
  */
-export function getStorage<T>(key: string): Nullable<T> {
+export function getStorage<T extends string>(key: string): Nullable<T> {
     const s =  localStorage.getItem(key);
     if (s?.startsWith('{')) {
         return JSON.parse(s)
