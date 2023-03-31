@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { message } from "ant-design-vue";
 import { apply } from "@/api/cert";
 import { download } from "@/utils/files";
+import router from "@/router";
 
 const success = ref(false);
 const placeholder = "请输入 UID";
@@ -44,13 +45,9 @@ function downloadCert() {
 
 <template>
   <div class="content">
-    <a-result
-      v-if="success"
-      status="success"
-      title="已成功创建证书!"
-      :sub-title="`证书编号为: ${successCert?.serialNumber}`"
-    >
+    <a-result v-if="success" status="success" title="已成功创建证书!" :sub-title="`证书编号为: ${successCert?.serialNumber}`">
       <template #extra>
+        <a-button key="return" @click="router.go(-1)">返回</a-button> 
         <a-button key="console" type="primary" @click="downloadCert">下载该证书</a-button>
         <a-button key="buy" @click="reCreate">再次创建</a-button>
       </template>
@@ -58,14 +55,10 @@ function downloadCert() {
     <div v-else>
       <div class="title">创建证书</div>
       <div class="input-container">
-        <input
-          type="text"
-          @keydown.enter="createCert"
-          v-model="certApplyUID"
-          :placeholder="placeholder"
-        />
+        <input type="text" @keydown.enter="createCert" v-model="certApplyUID" :placeholder="placeholder" />
       </div>
-      <a-button class="btn" block size="large" @click="createCert">创建</a-button>
+      <a-button class="btn" size="large" @click="router.go(-1)">返回</a-button> 
+      <a-button class="btn" size="large" @click="createCert">创建</a-button>
     </div>
   </div>
 </template>
@@ -81,7 +74,7 @@ function downloadCert() {
 }
 
 .btn {
-  margin-top: 48px;
+  margin: 48px 4px;
   width: 100px;
 }
 
@@ -107,6 +100,7 @@ input {
   text-align: center;
   vertical-align: middle;
 }
+
 .input-container input::-webkit-input-placeholder {
   color: #7881a1;
 }
@@ -122,15 +116,13 @@ input {
   border-bottom-left-radius: 2px;
   border-bottom-right-radius: 2px;
   background-position: 0% 0%;
-  background: linear-gradient(
-    to right,
-    #b294ff,
-    #57e6e6,
-    #feffb8,
-    #57e6e6,
-    #b294ff,
-    #57e6e6
-  );
+  background: linear-gradient(to right,
+      #b294ff,
+      #57e6e6,
+      #feffb8,
+      #57e6e6,
+      #b294ff,
+      #57e6e6);
   background-size: 500% auto;
   -webkit-animation: gradient 3s linear infinite;
   animation: gradient 3s linear infinite;
@@ -140,6 +132,7 @@ input {
   0% {
     background-position: 0 0;
   }
+
   100% {
     background-position: 100% 0;
   }
@@ -149,6 +142,7 @@ input {
   0% {
     background-position: 0 0;
   }
+
   100% {
     background-position: 100% 0;
   }
