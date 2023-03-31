@@ -5,6 +5,8 @@ import SearchInput from "@/components/SearchInput.vue";
 import { list, revoke } from "@/api/cert";
 import { Modal, message } from "ant-design-vue";
 import { SEARCH_PLACE_HOLDER } from "@/common/constants";
+import { getStorage, setStorage } from "@/utils/storage";
+import { SearchOutlined } from "@ant-design/icons-vue";
 
 const certs = ref<API.Cert[]>([]);
 
@@ -35,7 +37,21 @@ interface Column {
   ellipsis?: boolean;
   align?: "left" | "center" | "right";
   sorter?: (a: API.Cert, b: API.Cert) => number;
+  customFilterDropdown?: boolean;
+  /**
+   * Callback executed when the confirm filter button is clicked, Use as a filter event when using template or jsx
+   * @type Function
+   */
+  onFilter?: (value: any, record: any) => boolean;
+
+  /**
+   * Callback executed when filterDropdownVisible is changed, Use as a filterDropdownVisible event when using template or jsx
+   * @type Function
+   */
+  onFilterDropdownVisibleChange?: (visible: boolean) => void;
 }
+
+const searchInput = ref();
 const columns: Column[] = [
   {
     key: "ABSUID",
@@ -49,6 +65,17 @@ const columns: Column[] = [
     dataIndex: "serialNumber",
     width: 160,
     title: "证书序号",
+    customFilterDropdown: true,
+    onFilter: (value, record) => {
+      return record.serialNumber.toString().toLowerCase().includes(value.toLowerCase())
+    },
+    onFilterDropdownVisibleChange: visible => {
+      if (visible) {
+        setTimeout(() => {
+          searchInput.value.focus();
+        }, 100);
+      }
+    },
   },
   {
     key: "issuerCA",
@@ -107,6 +134,23 @@ function revokeCert(record: API.Cert) {
       revokingCertNumber.value = "";
     });
 }
+
+const DEFAULT_PAGE_SIZE = 'DEFAULT_PAGE_SIZE';
+const dpagesize = getStorage<string>(DEFAULT_PAGE_SIZE) || '10';
+const defaultPageSize = ref(parseInt(dpagesize));
+
+function tableChanged(pagination: any) {
+  setStorage(DEFAULT_PAGE_SIZE, pagination.pageSize);
+}
+
+const handleSearch = (confirm: () => void, dataIndex: string) => {
+  confirm();
+};
+
+const handleReset = (clearFilters: (config: any) => void) => {
+  clearFilters({ confirm: true });
+};
+
 </script>
 
 <template>
@@ -120,14 +164,39 @@ function revokeCert(record: API.Cert) {
     </div>
   </div>
   <div class="content">
-    <a-table :columns="columns" :data-source="table" size="middle" :pagination="{ position: ['bottomCenter'] }">
+    <a-table :columns="columns" :data-source="table" size="middle"
+      :pagination="{ position: ['bottomCenter'], hideOnSinglePage: true, defaultPageSize }" @change="tableChanged">
+
+      <template #customFilterDropdown="{ setSelectedKeys, selectedKeys, confirm, clearFilters, column }">
+        <div style="padding: 8px; width: 240px;">
+          <a-input ref="searchInput" placeholder="筛选序号中包含关键字的证书" :value="selectedKeys[0]"
+            style="margin-bottom: 8px;"
+            @change="(e: any) => setSelectedKeys(e.target.value ? [e.target.value] : [])"
+            @pressEnter="handleSearch(confirm, column.dataIndex)" />
+          <a-button type="primary" style="margin-right: 8px"
+            @click="handleSearch(confirm, column.dataIndex)">
+            筛选
+          </a-button>
+          <a-button  @click="handleReset(clearFilters)">
+            清空筛选条件
+          </a-button>
+        </div>
+      </template>
+
+      <template #customFilterIcon="{ filtered }">
+        <SearchOutlined :style="{ color: filtered ? '#108ee9' : undefined }" />
+      </template>
+
       <template #bodyCell="{ column, text, record }">
+        <template v-if="column.key === 'serialNumber'">
+          <router-link :to="'/query/' + text">{{ text || "-" }}</router-link>
+        </template>
         <template v-if="column.key === 'operation'">
           <span>
-            <a-button danger @click="deleteRow(record)" :loading="record.serialNumber === revokingCertNumber">
+            <a-button type="link" danger @click="deleteRow(record)" :loading="record.serialNumber === revokingCertNumber">
               撤销
             </a-button>
-            <a-button type="link" @click="viewDetail(record)"> 详情 </a-button>
+            <a-button type="link" @click="viewDetail(record)"> 更多信息 </a-button>
           </span>
         </template>
       </template>

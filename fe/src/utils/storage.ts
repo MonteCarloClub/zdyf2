@@ -1,13 +1,35 @@
-const MOCK_TX_LIST = 'key'
+import { isNull, isObject } from "@/utils/is";
+import { Nullable } from "@/utils/types";
+
+export type StorageObj = Object | string | undefined;
 
 /**
- * 
- * @returns 
+ * 保存在 localstorage
+ * @param key 键
+ * @param obj 值，object 或者 string
+ * @returns void
  */
-export function getTxList() {
-    const s = localStorage.getItem(MOCK_TX_LIST);
-    if (s) {
-        return JSON.parse(s);
+export function setStorage(key: string, obj: Nullable<StorageObj>): void {
+    if (obj === undefined || isNull(obj)) {
+        localStorage.setItem(key, '')
+        return;
     }
-    return [];
+    if (isObject(obj)) {
+        localStorage.setItem(key, JSON.stringify(obj))
+        return;
+    }
+    localStorage.setItem(key, obj)
+}
+
+/**
+ * 从 localstorage 中取值
+ * @param key 键
+ * @returns T
+ */
+export function getStorage<T>(key: string): Nullable<T> {
+    const s =  localStorage.getItem(key);
+    if (s?.startsWith('{')) {
+        return JSON.parse(s)
+    }
+    return s as T;
 }
