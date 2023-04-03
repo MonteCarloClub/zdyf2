@@ -25,5 +25,11 @@ function verifyCert() {
 </script>
 
 <template>
-  <a-button type="link" size="large" @click="verifyCert"> 验证本地证书 </a-button>
+  <a-button class="link-btn" type="link" size="large" @click="verifyCert"> 验证本地证书 </a-button>
 </template>
+
+<style scoped>
+.link-btn {
+  padding: 0;
+}
+</style>
