@@ -2,53 +2,107 @@
 
 课题任务书和相关文档见：`/doc`
 
-## 代码
-
 本仓库由以下两部分源码组成
 
 1. 后端：`/backend`
 2. 前端：`/fe`
 
+## 服务器
 
+- 服务器一：10.176.40.47，密码：`zdyf123!`，sudo：`pcaRKX7Y`
+- 服务器二：10.176.40.48，密码：`zdyf123!`，sudo：`39YwW8xh`
 
-## 静态资源
+## 部署流程
 
-打包好的前端静态资源见本仓库的 **Releases**，可以从中下载**分布式公钥基础设施**的前端静态资源（是一个压缩包），静态资源有以下两种使用方式
+参考[文档](https://nibgi8ovr7.feishu.cn/docx/VK9Qd8Hu2oVCjuxG32Dcx96Jnse)
 
-**1. 与本地的后端调试【TODO】**
+### 启动 Fabric 环境
 
-**2. 部署至服务器**
-
-需要配合 Nginx 使用，配置文件在`/etc/nginx/sites-available/default`，参考配置如下
-
-```nginx
-server{
-	location /cert {
-		alias /home/zdyf/cert/;
-		#指定主页
-		index index.html;
-		#自动跳转
-		autoindex on;
-	}
-}
+```bash
+$ cd /home/fn/go/src/github.com/hyperledger/fabric/scripts/fabric-samples/chaincode-docker-devmode
+$ sudo docker-compose -f docker-compose-couch.yaml up -d
 ```
 
-解释：
+执行 `docker ps` 可以看到一个ccenv容器、一个cli节点、一个peer节点、一个orderer排序节点和一个couchdb数据库。
 
-用户在浏览器访问 `<your-domain>/cert` 时，请求打到服务器上交由 Nginx 处理，Nginx 根据配置的内容返回服务器上 `/home/zdyf/cert/` 路径下的静态文件（`.html`、`.css`、`.js` 等）给浏览器，最后展示完整的前端页面。
+![image1](README/image1.png)
 
-所以**部署前端**实际上就是把本地打包好的（数据共享交换平台）静态资源上传至`/home/zdyf/cert/`目录下
+若没有全部启动，可以通过 `sudo docker-compose -f docker-compose-couch.yaml down` 停止程序后重新启动。
 
-最终服务器上的目录结构如下：
+### 运行合约程序
 
-```
-home/zdyf
-|
-+---cert
-|   |   index.html
-|   +---css
-|   +---js
+```bash
+$ sudo docker exec -it chaincode bash
+$ cd data_share/current/trustPlatform
+$ CORE_PEER_ADDRESS=peer:7052 CORE_CHAINCODE_ID_NAME=plat:0 ./trustPlatform
 ```
 
+新建 Terminal
+
+```bash
+$ sudo docker exec -it chaincode bash
+$ cd data_share/current/dabe
+$ CORE_PEER_ADDRESS=peer:7052 CORE_CHAINCODE_ID_NAME=dabe:0 ./dabe
+```
+
+### 安装并实例化合约
+
+新建 Terminal
+
+```bash
+$ sudo docker exec -it cli bash
+$ peer chaincode install -p chaincodedev/chaincode/data_share/current/dabe -n dabe -v 0
+$ peer chaincode instantiate -n dabe -v 0 -c '{"Args":[]}' -C myc
+$ peer chaincode install -p chaincodedev/chaincode/data_share/current/trustPlatform -n plat -v 0
+$ peer chaincode instantiate -n plat -v 0 -c '{"Args":["true"]}' -C myc
+```
+
+注：如果想在关闭终端之后仍保持程序运行，可以在第2、3步创建的终端中使用 <kbd>Ctrl</kbd> + <kbd>P</kbd> + <kbd>Q</kbd> 命令退出容器
+
+### 运行 java 后端
+
+新建 Terminal
+
+```bash
+$ cd /home/fn/dataShare/
+$ sudo nohup java -jar atp-0.0.1-SNAPSHOT.jar 2>&1 &
+```
+
+备注：
+
+新版本：
+
+新建Terminal
+
+```bash
+$ cd /home/fn/dataShare-v3/
+$ sudo nohup java -jar atp-0.0.1-SNAPSHOT.jar 2>&1 &
+```
+
+访问前端 http://10.176.40.47/cert
+
+## 指标测试
+
+**针对指标**：可管理数据源属性>2^16级维度
+
+**步骤**：
+
+新建Terminal
+
+```bash
+$ sudo docker exec -it cli bash
+$ peer chaincode invoke -n dabe -c '{"Args":["/common/batch","someone","someone:a","5","or","this is a test message"]}' -C myc
+```
 
 
+
+**说明：**该操作会自动进行加解密操作（自动创建用户、生成属性、加解密）
+
+- Args[0]：用户名
+- Args[1]：基本属性名
+- Args[2]：访问控制连接符（and 或 or）
+- Args[3]：要加密的消息
+
+## 部署架构
+
+![structure-2](README/structure-2.png)
