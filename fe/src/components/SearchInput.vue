@@ -4,7 +4,7 @@
       type="text"
       required
       v-model="searchKey"
-      @keydown.enter="onSearch(searchKey)"
+      @keydown.enter="onSearch()"
       :placeholder="dynamicPlaceholder ? '' : placeholder"
       :style="dark ? 'color: white;':''"
     />
@@ -13,7 +13,7 @@
       type="link"
       :class="`search-icon ${dark ? 'dark-search-icon' : 'light-search-icon'}`"
       size="large"
-      @click="onSearch(searchKey)"
+      @click="onSearch()"
     >
       <template #icon>
         <SearchOutlined />
@@ -28,8 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import { onSearch } from "@/composition/useSearch";
+import { ref, defineEmits } from "vue";
 import { SearchOutlined } from "@ant-design/icons-vue";
 
 defineProps({
@@ -48,6 +47,11 @@ defineProps({
 });
 
 const searchKey = ref("");
+const emit = defineEmits(['search'])
+
+const onSearch = () => {
+  emit('search', searchKey.value);
+}
 </script>
 
 <style scoped>

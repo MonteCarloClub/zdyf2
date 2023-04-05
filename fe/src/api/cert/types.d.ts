@@ -32,4 +32,15 @@ declare namespace API {
   type VerifyParams = string;
 
   type VerifyResponse = string;
+
+  type CertOnChainResponse = string | Cert;
+
+  type HistoryParams = {
+    index: number;
+    count: number;
+  };
+
+  type HistoryResponse = {
+    certificates: string[];
+  };
 }

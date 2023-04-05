@@ -64,3 +64,30 @@ export function verify(data: API.VerifyParams) {
         }
     );
 }
+
+
+/**
+ * 查询证书链上状态
+ */
+export function statusOnChain(params: API.QueryParams) {
+    return request<API.CertOnChainResponse>(
+        {
+            url: '/GetCertificateFromFabric',
+            method: 'get',
+            params
+        }
+    );
+}
+
+/**
+ * 查询证书链上状态
+ */
+export function history(params: API.HistoryParams) {
+    return request<API.HistoryResponse>(
+        {
+            url: '/getCertificates',
+            method: 'get',
+            params
+        }
+    );
+}

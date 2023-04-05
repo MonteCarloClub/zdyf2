@@ -7,6 +7,7 @@ import { Modal, message } from "ant-design-vue";
 import { SEARCH_PLACE_HOLDER } from "@/common/constants";
 import { getStorage, setStorage } from "@/utils/storage";
 import { SearchOutlined } from "@ant-design/icons-vue";
+import { onSearch } from "@/composition/useSearch";
 
 const certs = ref<API.Cert[]>([]);
 
@@ -158,7 +159,8 @@ const handleReset = (clearFilters: (config: any) => void) => {
     <div class="flex-expand nav">
       <router-link to="/"> 首页 </router-link>
     </div>
-    <SearchInput class="search-container" :dynamic-placeholder="false" :placeholder="SEARCH_PLACE_HOLDER" />
+    <SearchInput class="search-container" :dynamic-placeholder="false" :placeholder="SEARCH_PLACE_HOLDER"
+      @search="onSearch" />
     <div class="flex-expand nav" style="text-align: right;">
       <router-link to="/create"> 创建证书 </router-link>
     </div>
@@ -169,15 +171,13 @@ const handleReset = (clearFilters: (config: any) => void) => {
 
       <template #customFilterDropdown="{ setSelectedKeys, selectedKeys, confirm, clearFilters, column }">
         <div style="padding: 8px; width: 240px;">
-          <a-input ref="searchInput" placeholder="筛选序号中包含关键字的证书" :value="selectedKeys[0]"
-            style="margin-bottom: 8px;"
+          <a-input ref="searchInput" placeholder="筛选序号中包含关键字的证书" :value="selectedKeys[0]" style="margin-bottom: 8px;"
             @change="(e: any) => setSelectedKeys(e.target.value ? [e.target.value] : [])"
             @pressEnter="handleSearch(confirm, column.dataIndex)" />
-          <a-button type="primary" style="margin-right: 8px"
-            @click="handleSearch(confirm, column.dataIndex)">
+          <a-button type="primary" style="margin-right: 8px" @click="handleSearch(confirm, column.dataIndex)">
             筛选
           </a-button>
-          <a-button  @click="handleReset(clearFilters)">
+          <a-button @click="handleReset(clearFilters)">
             清空筛选条件
           </a-button>
         </div>
