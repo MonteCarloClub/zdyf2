@@ -8,6 +8,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	"github.com/hyperledger/fabric/protos/peer"
 )
@@ -32,19 +33,19 @@ func (t *SimpleAsset) Init(stub shim.ChaincodeStubInterface) peer.Response {
 
 func (t *SimpleAsset) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
 	// Extract the function and args from the transaction proposal
-	fn, args := stub.GetFunctionAndParameters()	
+	fn, args := stub.GetFunctionAndParameters()
 
 	var result string
 	var err error
 	if fn == "setCertificate" {
 		result, err = setCertificate(stub, args)
-	} else if fn == "getCertificate" { 
+	} else if fn == "getCertificate" {
 		result, err = getCertificate(stub, args)
-	}else if fn == "getCertificateByUUID"{
+	} else if fn == "getCertificateByUUID" {
 		result, err = getCertificateByUUID(stub, args)
-	}else if fn == "revokeCertificate"{
+	} else if fn == "revokeCertificate" {
 		result, err = revokeCertificate(stub, args)
-	}else if fn == "revokeCertificateByUUID"{
+	} else if fn == "revokeCertificateByUUID" {
 		result, err = revokeCertificateByUUID(stub, args)
 	}
 	if err != nil {
@@ -61,11 +62,11 @@ func setCertificate(stub shim.ChaincodeStubInterface, args []string) (string, er
 	}
 	var err error
 	// var value []byte
-	err = stub.PutState(IdPrefix + args[0], []byte(args[1]))
+	err = stub.PutState(IdPrefix+args[0], []byte(args[1]))
 	if err != nil {
 		return "", fmt.Errorf("Failed to set UUID: %s", args[0])
 	}
-	err = stub.PutState(serialNumberPrefix + args[1], []byte(args[2]))
+	err = stub.PutState(serialNumberPrefix+args[1], []byte(args[2]))
 	if err != nil {
 		return "", fmt.Errorf("Failed to set serialNumber: %s", args[0])
 	}
@@ -90,7 +91,6 @@ func getCertificate(stub shim.ChaincodeStubInterface, args []string) (string, er
 	}
 	return string(value), nil
 }
-
 
 func getCertificateByUUID(stub shim.ChaincodeStubInterface, args []string) (string, error) {
 	if len(args) != 1 {
@@ -131,7 +131,6 @@ func revokeCertificateByUUID(stub shim.ChaincodeStubInterface, args []string) (s
 	}
 	return "", nil
 }
-
 
 // main function starts up the chaincode in the container during instantiate
 func main() {
