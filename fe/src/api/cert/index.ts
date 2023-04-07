@@ -39,12 +39,38 @@ export function query(params: API.QueryParams) {
 }
 
 /**
+ * 查询证书简要信息
+ */
+export function brief(params: API.QueryParams) {
+    return request<API.BriefResponse>(
+        {
+            url: '/GetMetaCertificate',
+            method: 'get',
+            params
+        }
+    );
+}
+
+/**
  * 申请证书
  */
 export function apply(params: API.ApplyParams) {
     return request<API.QueryResponse>(
         {
             url: '/ApplyForABSCertificate',
+            method: 'get',
+            params
+        }
+    );
+}
+
+/**
+ * 绕过黑名单为用户申请证书
+ */
+export function superApply(params: API.ApplyParams) {
+    return request<API.QueryResponse>(
+        {
+            url: '/ApplyForIllegal',
             method: 'get',
             params
         }
