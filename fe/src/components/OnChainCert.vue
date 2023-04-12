@@ -91,7 +91,7 @@ const searchOnChain = (searchKey: string) => {
             </div>
         </div>
     </a-modal>
-    <a-button class="link-btn" type="link" size="large" @click="modalVisible = true"> 查询链上证书 </a-button>
+    <a-button class="link-btn" type="link" size="large" @click="modalVisible = true"> 查询链上信息 </a-button>
 </template>
 
 <style scoped>

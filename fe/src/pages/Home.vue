@@ -25,8 +25,11 @@ import bgPath from '@/assets/bg.jpg'
           </router-link>
           <CertHistory />
         </div>
-        <div class="link">
+        <div class="ops">
           <OnChainCert />
+          <router-link to="/cas">
+            CA信誉审计
+          </router-link>
         </div>
       </div>
     </div>
@@ -71,10 +74,6 @@ import bgPath from '@/assets/bg.jpg'
   margin-top: 32px;
   line-height: 40px;
   justify-content: center;
-}
-
-.main .link {
-  margin-top: 22px;
 }
 
 .background {

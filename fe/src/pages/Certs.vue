@@ -235,6 +235,5 @@ const handleReset = (clearFilters: (config: any) => void) => {
 .nav a {
   font-size: 22px;
   color: black;
-
 }
 </style>

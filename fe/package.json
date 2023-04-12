@@ -1,6 +1,6 @@
 {
-  "name": "blockchain-explorer",
-  "version": "0.0.0",
+  "name": "dpki",
+  "version": "1.0.0",
   "scripts": {
     "start": "vite",
     "build": "vue-tsc --noEmit && vite build",
