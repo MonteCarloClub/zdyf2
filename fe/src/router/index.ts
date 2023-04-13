@@ -20,6 +20,10 @@ const router = createRouter({
             path: '/query/:no',
             component: () => import("@/pages/Query.vue")
         },
+        {
+            path: '/blacklist',
+            component: () => import("@/pages/Blacklist.vue")
+        }
     ]
 })
 
