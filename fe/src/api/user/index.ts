@@ -14,7 +14,7 @@ export function removeFromBlacklist(params: API.UserParams) {
 }
 
 /**
- * 把用户移出黑名单
+ * 把用户加入黑名单
  */
 export function addToBlacklist(params: API.UserParams) {
     return request<API.addBlacklistResponse>(

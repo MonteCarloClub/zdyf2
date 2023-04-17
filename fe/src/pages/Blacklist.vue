@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import CertDetail from "@/components/CertDetail.vue";
-import SearchInput from "@/components/SearchInput.vue";
-// import { list, revoke } from "@/api/cert";
 import { blacklist, removeFromBlacklist, addToBlacklist } from "@/api/user";
 import { Modal, message } from "ant-design-vue";
 import { getStorage, setStorage } from "@/utils/storage";
@@ -10,12 +7,9 @@ import { getStorage, setStorage } from "@/utils/storage";
 const users = ref<API.UserParams[]>([]);
 
 blacklist().then((res) => {
-  console.log("res: ", res)
   if (res.certificates) {
-    console.log("certificates: ", res.certificates);
     const list = res.certificates.map(uid => ({ "uid": uid }));
     users.value = list;
-    console.log("users: ", list);
   }
 });
 
@@ -29,16 +23,14 @@ const table = computed(() =>
   })
 );
 
-console.log(table)
-
 interface Column {
   key: string;
   title: string;
-  dataIndex: keyof API.Cert | string;
+  dataIndex: keyof API.DemoParams | string;
   width?: number;
   ellipsis?: boolean;
   align?: "left" | "center" | "right";
-  sorter?: (a: API.Cert, b: API.Cert) => number;
+  sorter?: (a: API.DemoParams, b: API.DemoParams) => number;
   customFilterDropdown?: boolean;
   /**
    * Callback executed when the confirm filter button is clicked, Use as a filter event when using template or jsx
@@ -55,8 +47,8 @@ interface Column {
 
 const columns: Column[] = [
   {
-    key: "UID",
-    dataIndex: "UID",
+    key: "uid",
+    dataIndex: "uid",
     width: 100,
     title: "用户",
   },
@@ -71,23 +63,33 @@ const columns: Column[] = [
 
 const addBlackFormVisible = ref(false);
 const uidAddBlack = ref<string>("");
-const addUid = ref("")
+const addBlackLoading = ref(false)
 function addUserToBlacklist(record: string) {
-  addUid.value = uidAddBlack.value;
+  addBlackLoading.value = true;
   addToBlacklist({
     uid: record
   })
     .then((res) => {
-      if (res === "Add to blacklist success.") {
-        message.success("添加成功");
-        addBlackFormVisible.value = false;
+      switch (res) {
+        case "Add to blacklist success.":
+          message.success("添加成功");
+          users.value.unshift({ "uid": record })
+          addBlackFormVisible.value = false;
+          break;
+        case record + " is already illegal.":
+          message.error("用户已经在黑名单中");
+          addBlackFormVisible.value = false;
+          break;
+        default:
+          console.log("ad bl res:", res)
+          break;
       }
     })
     .catch((err) => {
       message.error(err);
     })
     .finally(() => {
-      addUid.value = ""
+      addBlackLoading.value = false;
     });
 }
 
@@ -110,7 +112,7 @@ function rmFromBlacklist(record: API.UserParams) {
     uid: record.uid,
   })
     .then((res) => {
-      if (res === "Revoke OK.") {
+      if (res === "Remove from blacklist success.") {
         message.success("撤销成功");
         users.value = users.value.filter(
           (user) => user.uid != record.uid
@@ -146,7 +148,7 @@ function tableChanged(pagination: any) {
         <a-input v-model:value="uidAddBlack" placeholder="请输入UID" />
         <template #footer>
           <a-button key="back" @click="addBlackFormVisible = false">取消</a-button>
-          <a-button key="submit" type="primary" :loading="addUid === uidAddBlack" @click="addUserToBlacklist(uidAddBlack)"
+          <a-button key="submit" type="primary" :loading="addBlackLoading" @click="addUserToBlacklist(uidAddBlack)"
             :disabled="uidAddBlack === ''">确认</a-button>
         </template>
       </a-modal>
