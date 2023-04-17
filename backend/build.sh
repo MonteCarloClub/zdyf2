@@ -55,7 +55,7 @@ RunTest(){
   ./$Test -n $1
   cd ..
   echo "总计生成证书数量：" 
-  curl "http://localhost/dpki/GetCertificateNumber"
+  curl "http://10.176.40.47/dpki/GetCertificateNumber"
 }
 
 killBe(){

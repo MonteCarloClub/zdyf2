@@ -26,22 +26,24 @@ var (
 
 type Certificate struct {
 	Version        string `json:"version"`
+	ABSUID         string `json:"ABSUID"`
 	SerialNumber   string `json:"serialNumber"`
 	Signature      string `json:"signatureName"`
 	Issuer         string `json:"issuer"`
 	IssuerCA       string `json:"issuerCA"`
+	IssueTime      string `json:"IssueTime"`
 	ValidityPeriod string `json:"validityPeriod"`
-	ABSUID         string `json:"ABSUID"`
 	ABSAttribute   string `json:"ABSAttribute"`
-}
-
-func init() {
-	NginxServer = "http://localhost"
 }
 
 type CertificateResponse struct {
 	CertificateContent Certificate `json:"certificate"`
+	Hash               string      `json:"hash"`
 	ABSSign            string      `json:"absSignature"`
+}
+
+func init() {
+	NginxServer = "http://10.176.40.47"
 }
 
 func GenTest(uid string) string {
@@ -419,14 +421,14 @@ func completeVerify(num int) {
 }
 
 func HighConcurrencyTest() {
-	num := 100000
+	num := 1000
 	var valid int = 0
 	a := make([]float64, num, num)
 	randCert := make([]int, num, num)
 	for id, _ := range randCert {
 		randCert[id] = rand.Intn(len(Certificates))
 	}
-	fmt.Println("-------------------------十万并发测试 test ---------------------")
+	fmt.Println("-------------------------1万并发测试 test ---------------------")
 	start := time.Now().UnixNano()
 	for j := 0; j < num/100; j += 1 {
 		var wg sync.WaitGroup
@@ -531,5 +533,5 @@ func main() {
 	applyTest(*num)
 	// verify(*num)
 	completeVerify(*num)
-	// HighConcurrencyTest()
+	HighConcurrencyTest()
 }

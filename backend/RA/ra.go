@@ -414,6 +414,11 @@ func Sha256(src string) string {
 	return res
 }
 
+func HandleGetCAName(resp http.ResponseWriter, req *http.Request) {
+	resp.Header().Set("Access-Control-Allow-Origin", "*")
+	resp.Write([]byte(IssuerName))
+}
+
 func main() {
 	http.HandleFunc("/ApplyForABSCertificate", ApplyForABSCertificate)
 
@@ -428,6 +433,8 @@ func main() {
 
 	http.HandleFunc("/IoTDevTest", IoTDevTest)
 	http.HandleFunc("/IotDevInit", IotDevInit)
+
+	http.HandleFunc("/getCAName", HandleGetCAName)
 
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", *gPort), nil); err != nil {
 		log.Fatalln(err)

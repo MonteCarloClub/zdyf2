@@ -9,8 +9,8 @@ if [[ `uname` == 'Linux' ]]; then
     export PATH=${PWD}/hyperledger-fabric-linux-amd64-1.4.12/bin:$PATH
 fi
 
-echo "生成证书和秘钥（ MSP 材料），生成结果将保存在 crypto-config 文件夹中"
-cryptogen generate --config=./crypto-config.yaml
+# echo "生成证书和秘钥（ MSP 材料），生成结果将保存在 crypto-config 文件夹中"
+# cryptogen generate --config=./crypto-config.yaml
 
 echo "创建排序通道创世区块"
 configtxgen -profile TwoOrgsOrdererGenesis -outputBlock ./config/genesis.block -channelID firstchannel
