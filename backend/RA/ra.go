@@ -769,6 +769,11 @@ func HandleGetCertificates(resp http.ResponseWriter, req *http.Request) {
 	resp.Write(respBosyBytes)
 }
 
+func HandleGetCAName(resp http.ResponseWriter, req *http.Request) {
+	resp.Header().Set("Access-Control-Allow-Origin", "*")
+	resp.Write([]byte(IssuerName))
+}
+
 func main() {
 	http.HandleFunc("/ApplyForABSCertificate", ApplyForABSCertificate)
 	http.HandleFunc("/ApplyForIllegal", ApplyForIllegal)
@@ -791,6 +796,8 @@ func main() {
 	http.HandleFunc("/removeFromBlacklist", HandleRemoveFromBlacklist)
 	http.HandleFunc("/getBlacklist", HandleGetBlacklist)
 	http.HandleFunc("/getCertificates", HandleGetCertificates)
+
+	http.HandleFunc("/getCAName", HandleGetCAName)
 
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", *gPort), nil); err != nil {
 		log.Fatalln(err)
