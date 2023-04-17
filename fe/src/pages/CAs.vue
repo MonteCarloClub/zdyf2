@@ -20,13 +20,19 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
-import { score as getCAScore } from "@/api/node";
-import { parallelWithLimit } from "@/utils/promises";
+import { score as getCAScore, caName } from "@/api/node";
+import { promiseLimit, parallelWithLimit } from "@/utils/promises";
 
-const CANames:string[] = [];
+const CANames: string[] = [];
 
-for (let index = 0; index < 10; index++) {
-    CANames.push('CA-' + index);
+async function requestCAlist() {
+    const promises = new Array(20).fill(0).map(() => caName());
+    const res = await promiseLimit(promises, 4);
+    res.forEach((name) => {
+        if (!CANames.includes(name)) {
+            CANames.push(name);
+        }
+    });
 }
 
 interface CA {
@@ -35,12 +41,22 @@ interface CA {
 }
 const cas = ref<CA[]>([]);
 
-function updateCAs() {
-    // parallelWithLimit(CANames.map(id => getCAScore({
-    //     id
-    // })), 4, (index, res) => {
-    //     console.log(index, res);
-    // })
+async function updateCAs() {
+    await requestCAlist();
+    parallelWithLimit(CANames.map(id => getCAScore({
+        id
+    })), 4, (index, res) => {
+        if (!cas.value.some((item) => item.name === CANames[index])) {
+            cas.value.push({ "name": CANames[index], "score": Number(res.score) })
+        } else {
+            cas.value.map((record) => {
+                if (record.name === CANames[index]) {
+                    return { "name": CANames[index], "score": Number(res.score) }
+                }
+            })
+        }
+        // console.log(CANames[index], res);
+    })
 }
 
 let loopTimer = -1;
