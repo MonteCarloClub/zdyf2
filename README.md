@@ -96,7 +96,7 @@ $ peer chaincode invoke -n dabe -c '{"Args":["/common/batch","someone","someone:
 
 
 
-**说明：**该操作会自动进行加解密操作（自动创建用户、生成属性、加解密）
+**说明**：该操作会自动进行加解密操作（自动创建用户、生成属性、加解密）
 
 - Args[0]：用户名
 - Args[1]：基本属性名
