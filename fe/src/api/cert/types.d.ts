@@ -22,9 +22,11 @@ declare namespace API {
     signatureName: string;
     validityPeriod: string;
     version: string;
+    IssueTime: string;
   };
 
   type QueryResponse = {
+    hash: string;
     absSignature: string;
     certificate: Cert;
   }
@@ -43,4 +45,6 @@ declare namespace API {
   type HistoryResponse = {
     certificates: string[];
   };
+
+  type BriefResponse = Cert;
 }

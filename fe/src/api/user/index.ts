@@ -1,16 +1,39 @@
 import { request } from '@/api/request';
 
 /**
- * 获取用户的详细信息
- * @param data 请求参数
- * @returns 用户详细信息
+ * 把用户移出黑名单
  */
-export function userInfo(data: API.UserInfoParams) {
-    return request<API.UserInfoResponse>(
+export function removeFromBlacklist(params: API.UserParams) {
+    return request<API.rmBlacklistResponse>(
         {
-            url: '/user/info',
-            method: 'post',
-            data
+            url: '/removeFromBlacklist',
+            method: 'get',
+            params
+        }
+    );
+}
+
+/**
+ * 把用户加入黑名单
+ */
+export function addToBlacklist(params: API.UserParams) {
+    return request<API.addBlacklistResponse>(
+        {
+            url: '/addToBlacklist',
+            method: 'get',
+            params
+        }
+    );
+}
+
+/**
+ * 获取黑名单
+ */
+export function blacklist() {
+    return request<API.BlacklistResponse>(
+        {
+            url: '/getBlacklist',
+            method: 'get'
         }
     );
 }
