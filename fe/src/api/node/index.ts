@@ -12,3 +12,16 @@ export function score(params: API.NodeScoreParams) {
         }
     );
 }
+
+
+/**
+ * 获取节点名称
+ */
+export function caName() {
+    return request<string>(
+        {
+            url: '/getCAName',
+            method: 'get'
+        }
+    );
+}

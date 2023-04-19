@@ -25,10 +25,13 @@ import bgPath from '@/assets/bg.jpg'
           </router-link>
           <CertHistory />
         </div>
-        <div class="link">
+        <div class="ops">
           <OnChainCert />
           <router-link to="/blacklist">
             查看黑名单
+          </router-link>
+          <router-link to="/cas">
+            CA信誉审计
           </router-link>
         </div>
       </div>

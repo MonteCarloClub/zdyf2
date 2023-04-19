@@ -22,7 +22,11 @@ function fetchNext() {
         if (certificates.length < count) {
             hasMore.value = false;
         }
-    }).catch(console.log)
+    }).catch(err => {
+        console.log(err);
+        // 出错的时候，认为后续没有了
+        hasMore.value = false;
+    })
 }
 
 onMounted(() => {
@@ -40,7 +44,7 @@ onMounted(() => {
             </div>
         </div>
     </a-modal>
-    <a-button class="link-btn" type="link" size="large" @click="modalVisible = true"> 历史颁发记录 </a-button>
+    <a-button class="link-btn" type="link" size="large" @click="modalVisible = true"> 证书透明发放 </a-button>
 </template>
 
 <style scoped>
