@@ -18,7 +18,7 @@ export function setStorage(key: string, obj: Nullable<StorageObj>): void {
         localStorage.setItem(key, JSON.stringify(obj))
         return;
     }
-    localStorage.setItem(key, obj)
+    localStorage.setItem(key, obj as string)
 }
 
 /**
