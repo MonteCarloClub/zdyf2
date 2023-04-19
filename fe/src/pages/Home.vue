@@ -27,6 +27,9 @@ import bgPath from '@/assets/bg.jpg'
         </div>
         <div class="ops">
           <OnChainCert />
+          <router-link to="/blacklist">
+            查看黑名单
+          </router-link>
           <router-link to="/cas">
             CA信誉审计
           </router-link>
@@ -72,6 +75,15 @@ import bgPath from '@/assets/bg.jpg'
   display: flex;
   font-size: 16px;
   margin-top: 32px;
+  line-height: 40px;
+  justify-content: center;
+}
+
+.main .link {
+  margin-top: 22px;
+  gap: 22px;
+  display: flex;
+  font-size: 16px;
   line-height: 40px;
   justify-content: center;
 }

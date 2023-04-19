@@ -11,4 +11,5 @@ CA/nohup.out
 Client/abs_client
 template
 Test/chaincode-sdk-test
+Test/dpki_test
 redis/data/*
