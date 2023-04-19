@@ -28,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineEmits } from "vue";
+import { ref } from "vue";
 import { SearchOutlined } from "@ant-design/icons-vue";
 
 defineProps({
