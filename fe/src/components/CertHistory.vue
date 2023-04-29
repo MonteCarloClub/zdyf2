@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { history } from "@/api/cert";
+import { history,getCertificateDetail } from "@/api/cert";
 
 const modalVisible = ref(false);
 const loadingMore = ref(false);
 const hasMore = ref(true);
 
 const list = ref<string[]>([])
-
+const listDetail = ref<string[]>([])
 let index = 0;
 const count = 10;
 function fetchNext() {
@@ -17,6 +17,8 @@ function fetchNext() {
     }).then((res) => {
         const { certificates } = res;
         list.value = list.value.concat(certificates);
+        list.value.forEach(value  => getDetail(value) );
+        //分别对编号调用foreach查询并把需要的字符串放入listDetail数组中
         index += count;
         // 不够的时候，认为后续没有了
         if (certificates.length < count) {
@@ -28,7 +30,16 @@ function fetchNext() {
         hasMore.value = false;
     })
 }
-
+function getDetail(serNumber :string ) {
+    getCertificateDetail(serNumber
+    ).then((res) =>{
+        let info =" 发行人：\t" +res['issuerCA']+"\t在\t"+ res['IssueTime']+"\t给\t"+ res['ABSUID']+"\t颁发了证书\t"+res['serialNumber'];
+        listDetail.value.push(info);
+    }).catch(err =>{
+        console.log(err);
+    })
+    
+}
 onMounted(() => {
     fetchNext();
 });
@@ -37,7 +48,8 @@ onMounted(() => {
 <template>
     <a-modal v-model:visible="modalVisible" centered :footer="null" title="证书颁发记录" @ok="modalVisible = false">
         <div class="scrollable">
-            <p v-for="cert in list" :key="cert">{{ cert }}</p>
+            <p v-for="cert in listDetail" :key="cert" >{{ cert }} </p>
+              
             <div style="text-align: center;">
                 <a-button v-if="hasMore" type="link" :loading="loadingMore" @click="fetchNext">获取更多</a-button>
                 <p v-else style="color: gray">没有更多了</p>
@@ -45,6 +57,7 @@ onMounted(() => {
         </div>
     </a-modal>
     <a-button class="link-btn" type="link" size="large" @click="modalVisible = true"> 证书透明发放 </a-button>
+    
 </template>
 
 <style scoped>

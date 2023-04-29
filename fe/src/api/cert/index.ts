@@ -117,3 +117,16 @@ export function history(params: API.HistoryParams) {
         }
     );
 }
+
+/**
+ * 通过单个证书序列号查询证书信息
+ */
+export function getCertificateDetail(no:string){
+    return request<API.Cert>(
+        {
+            url: '/GetMetaCertificate',
+            method: 'get',
+            params: {no}
+        }
+    );
+}
