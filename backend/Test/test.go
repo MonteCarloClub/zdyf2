@@ -107,7 +107,7 @@ func revokeCertTest(no string) bool {
 }
 
 func abs_test(num int) {
-	fmt.Println("ABS test ---------------------")
+	fmt.Println("ABS---------------------")
 	fmt.Println("ABS gen & verify: ")
 	start := time.Now().UnixNano()
 	var a [20000]float64
@@ -172,8 +172,8 @@ func Benchmark_Singletest(b *testing.B) {
 }
 
 func applyTest(num int) {
-	fmt.Println("----------------------证书申请test ---------------------")
-	fmt.Println("Apply test ---------------------")
+	fmt.Println("----------------------证书申请---------------------")
+	fmt.Println("申请数量:", num)
 	fmt.Println("ABS gen: ")
 	start := time.Now().UnixNano()
 	a := make([]float64, num, num)
@@ -203,7 +203,7 @@ func applyTest(num int) {
 					valid += 1
 					gRWLock.Unlock()
 				}
-			}(strconv.Itoa(j*100+i+10000), j, i)
+			}("ApplyTestUser" + strconv.Itoa(j*100+i), j, i)
 		}
 		wg.Wait()
 	}
@@ -298,7 +298,7 @@ func verify(num int) {
 	for id, _ := range randCert {
 		randCert[id] = rand.Intn(len(certs))
 	}
-	fmt.Println("Verify test ---------------------")
+	fmt.Println("Verify---------------------")
 	start := time.Now().UnixNano()
 	for j := 0; j < num/100; j += 1 {
 		var wg sync.WaitGroup
@@ -373,7 +373,7 @@ func completeVerify(num int) {
 	for id, _ := range randCert {
 		randCert[id] = rand.Intn(len(certs))
 	}
-	fmt.Println("完整证书验证 test ---------------------")
+	fmt.Println("完整证书验证---------------------")
 	start := time.Now().UnixNano()
 	for j := 0; j < num/100; j += 1 {
 		var wg sync.WaitGroup
@@ -420,15 +420,15 @@ func completeVerify(num int) {
 	fmt.Print("Total success rate: ", rate, "%\n")
 }
 
-func HighConcurrencyTest() {
-	num := 1000
+func HighConcurrencyTest(num int) {
 	var valid int = 0
 	a := make([]float64, num, num)
-	randCert := make([]int, num, num)
-	for id, _ := range randCert {
-		randCert[id] = rand.Intn(len(Certificates))
-	}
-	fmt.Println("-------------------------1万并发测试 test ---------------------")
+	// randCert := make([]int, num, num)
+	// for id, _ := range randCert {
+	// 	randCert[id] = rand.Intn(len(Certificates))
+	// }
+	CertNum := len(Certificates) 
+	fmt.Println("-------------------------并发测试---------------------")
 	start := time.Now().UnixNano()
 	for j := 0; j < num/100; j += 1 {
 		var wg sync.WaitGroup
@@ -449,7 +449,7 @@ func HighConcurrencyTest() {
 					valid += 1
 					gRWLock.Unlock()
 				}
-			}(strconv.Itoa(j*100+i+10000), j, i)
+			}("ConcurrencyTestUser" + strconv.Itoa(j*10+i+1), j, i)
 		}
 		// 验证请求 50%
 		for i := 0; i < 50; i += 1 {
@@ -457,14 +457,14 @@ func HighConcurrencyTest() {
 			go func(j int, i int) {
 				defer wg.Done()
 				sBegin := time.Now().UnixNano()
-				cer := Certificates[randCert[j*100+i]]
+				cer := Certificates[CertNum - 1 - i]
 				if completeVerifyTest(cer) {
 					gRWLock.Lock()
 					valid += 1
 					gRWLock.Unlock()
 				}
 				sEnd := time.Now().UnixNano()
-				a[j*100+i] = float64(sEnd-sBegin) / 1e9
+				a[j*100+i+10] = float64(sEnd-sBegin) / 1e9
 			}(j, i)
 		}
 		// 查询请求 30%
@@ -473,14 +473,14 @@ func HighConcurrencyTest() {
 			go func(j int, i int) {
 				defer wg.Done()
 				sBegin := time.Now().UnixNano()
-				cer := Certs[randCert[j*100+i]]
+				cer := Certs[CertNum - 51 - i]
 				if getCertTest(cer.SerialNumber) {
 					gRWLock.Lock()
 					valid += 1
 					gRWLock.Unlock()
 				}
 				sEnd := time.Now().UnixNano()
-				a[j*100+i] = float64(sEnd-sBegin) / 1e9
+				a[j*100+i+60] = float64(sEnd-sBegin) / 1e9
 			}(j, i)
 		}
 		// 撤销请求 10%
@@ -489,14 +489,14 @@ func HighConcurrencyTest() {
 			go func(j int, i int) {
 				defer wg.Done()
 				sBegin := time.Now().UnixNano()
-				cer := Certs[randCert[j*100+i]]
+				cer := Certs[j*10 + i * 10]
 				if revokeCertTest(cer.SerialNumber) {
 					gRWLock.Lock()
 					valid += 1
 					gRWLock.Unlock()
 				}
 				sEnd := time.Now().UnixNano()
-				a[j*100+i] = float64(sEnd-sBegin) / 1e9
+				a[j*100+i+90] = float64(sEnd-sBegin) / 1e9
 			}(j, i)
 		}
 		wg.Wait()
@@ -526,12 +526,84 @@ func HighConcurrencyTest() {
 	fmt.Print("Total success rate: ", rate, "%\n")
 }
 
+func SPOF(num int) {
+	fmt.Println("----------------------SPOF证书申请---------------------")
+	start := time.Now().UnixNano()
+	a := make([]float64, num, num)
+	var valid int = 0
+	Certs = make([]Certificate, num, num)
+	Certificates = make([]string, num, num)
+	certificates := make([]CertificateResponse, num, num)
+	for j := 0; j < num/100; j += 1 {
+		var wg sync.WaitGroup
+		for i := 0; i < 100; i += 1 {
+			wg.Add(1)
+			go func(uid string, j int, i int) {
+				defer wg.Done()
+				sBegin := time.Now().UnixNano()
+				sign := GenTest(uid)
+				sEnd := time.Now().UnixNano()
+				a[j*100+i] = float64(sEnd-sBegin) / 1e9
+				var cer CertificateResponse
+				if err := json.Unmarshal([]byte(sign), &cer); err != nil {
+					return
+				} else {
+					certificates[j*100+i] = cer
+					Certs[j*100+i] = cer.CertificateContent
+					CertStr, _ := json.Marshal(cer)
+					Certificates[j*100+i] = string(CertStr)
+					gRWLock.Lock()
+					valid += 1
+					gRWLock.Unlock()
+				}
+			}("SPOF" + strconv.Itoa(j*100+i+1), j, i)
+		}
+		wg.Wait()
+	}
+	end := time.Now().UnixNano()
+	fmt.Print("Generate Total time: ")
+	fmt.Println(float64(end-start) / 1e9)
+
+	var avgGen float64
+	var max float64 = -1
+	var min float64 = 10
+	for _, ga := range a {
+		avgGen += ga
+		if ga < min {
+			min = ga
+		}
+		if ga > max {
+			max = ga
+		}
+	}
+	fmt.Print("Max response time of Generate: ")
+	fmt.Println(max)
+	fmt.Print("Min response time of Generate: ")
+	fmt.Println(min)
+	fmt.Print("Average time of ABS gen: ")
+	fmt.Println(avgGen / float64(num))
+	var rate float64 = (float64(valid) / float64(num)) * 100
+	fmt.Print("Total success rate: ", rate, "%\n")
+}
+
 func main() {
 	num := flag.Int("n", 1000, "number of test.")
+	method := flag.String("m", "apply", "number of test.")
 	flag.Parse()
-	// abs_test(*num)
-	applyTest(*num)
-	// verify(*num)
-	completeVerify(*num)
-	HighConcurrencyTest()
+	if *method == "SPOF"{
+		SPOF(100)
+	}else if *method == "Apply"{
+		applyTest(*num)
+	}else if *method == "Verify"{
+		applyTest(*num)
+		completeVerify(*num)
+	}else if *method == "Concurrency"{
+		fmt.Println("----------------------为并发测试准备证书---------------------")
+		applyTest((*num / 1000 + 2) * 100)
+		fmt.Println("----------------------等待证书信息准备完毕---------------------")
+		time.Sleep(time.Duration(10)*time.Second)
+		HighConcurrencyTest(*num)
+	}else{
+		fmt.Print("Method not found.")
+	}
 }
