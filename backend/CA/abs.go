@@ -27,8 +27,8 @@ var (
 )
 
 func init() {
-    numT = flag.Int("t", 75, "t of (t, n).")
-    numN = flag.Int("n", 100, "n of (t, n).")
+    numT = flag.Int("t", 15, "t of (t, n).")
+    numN = flag.Int("n", 20, "n of (t, n).")
     flag.Parse()
     numG = fromHex(generatorHex)
     numP = fromHex(primeHex)

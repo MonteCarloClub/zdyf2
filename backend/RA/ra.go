@@ -102,7 +102,7 @@ func ApplyForABSCertificate(w http.ResponseWriter, r *http.Request) {
 	blacklist := getBlacklist()
 	for _, v := range blacklist {
 		if uid == v {
-			log.Printf("[Apply]UID: %s 在黑名单中.", uid)
+			log.Printf("[Apply] UID: %s is in blacklist.", uid)
 			http.Error(w, "UID在黑名单中.", http.StatusBadRequest)
 			return
 		}
@@ -129,7 +129,7 @@ func ApplyForABSCertificate(w http.ResponseWriter, r *http.Request) {
 	CAPort = (CAPort + 1) % CANum
 	// c.IssuerCA = IssuerName + "-CA-" + strconv.Itoa(CAPort+9000+(RAbase-1)*CANum+1)
 	if err != nil {
-		log.Printf("[Apply]CA SingleGenerate: %s 失败", c.SerialNumber)
+		log.Printf("[Apply] CA SingleGenerate: %s failed.", c.SerialNumber)
 		http.Error(w, err.Error(), 500)
 		return
 	}
@@ -137,11 +137,10 @@ func ApplyForABSCertificate(w http.ResponseWriter, r *http.Request) {
 
 	sign, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("[Apply]CA SingleGenerate read info: %s 失败", c.SerialNumber)
+		log.Printf("[Apply] CA SingleGenerate read info: %s failed.", c.SerialNumber)
 		http.Error(w, err.Error(), 500)
 		return
 	}
-	// TODO 计算哈希
 	res := CertificateResponse{
 		CertificateContent: c,
 		Hash:               Sha256(string(b)),
@@ -174,7 +173,7 @@ func ApplyForABSCertificate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Printf("[ERROR] fail to add certificate %v to meta zset", serialNumber)
 	}
-
+	log.Printf("[Apply] Apply success: %s.", c.SerialNumber)
 	fbInfo := FabricInfo{
 		ABSUID:       []byte(c.ABSUID),
 		SerialNumber: []byte(c.SerialNumber),
@@ -282,11 +281,11 @@ func fabricStore(fbInfochan chan *FabricInfo) {
 			args = append(args, fbInfo.Cert)
 			_, err = ChannelExecute("setCertificate", args)
 			if err != nil {
-				// log.Printf("[Apply]Fabric setCertificate: %s 失败 %s", fbInfo.SerialNumber, err.Error())
+				// log.Printf("[Apply]Fabric setCertificate: %s failed %s", fbInfo.SerialNumber, err.Error())
 				time.Sleep(time.Millisecond * 1000)
 				fbWorker <- fbInfo
 			} else {
-				log.Printf("[Apply]Fabric setCertificate: %s 成功", fbInfo.SerialNumber)
+				log.Printf("[Apply] Fabric setCertificate: %s success", fbInfo.SerialNumber)
 			}
 		}(fbInfo)
 	}
@@ -340,7 +339,7 @@ func VerifyABSCert(writer http.ResponseWriter, request *http.Request) {
 
 	rawCert, err := ioutil.ReadAll(request.Body)
 	if err != nil {
-		log.Println("[Verify]Read certificate failed:", err)
+		log.Println("[Verify] Read certificate failed:", err)
 	}
 	defer request.Body.Close()
 	var cert CertificateResponse
@@ -361,7 +360,7 @@ func VerifyABSCert(writer http.ResponseWriter, request *http.Request) {
 		if requestHash == certFromRedis.Hash {
 			valid := cert.CertificateContent.ValidityPeriod
 			if valid < strconv.FormatInt(time.Now().UnixNano(), 10) {
-				log.Println("[Verify]The certificate has expired:", SNumber)
+				log.Println("[Verify] The certificate has expired:", SNumber)
 				http.Error(writer, "The certificate has expired.", 500)
 				return
 			}
@@ -435,8 +434,10 @@ func GetCertificate(w http.ResponseWriter, r *http.Request) {
 
 	rawData, err := redisdb.Get(serialNumber).Result()
 	if err != nil {
-		http.Error(w, "Certificate does not exist.", 500)
+		log.Printf("[Query] Query certificate %s is not found, it does not exist or has been revoked.", serialNumber)
+		http.Error(w, "Certificate does not exist or has been revoked.", 500)
 	} else {
+		log.Printf("[Query] Query certificate %s success.", serialNumber)
 		_, _ = fmt.Fprintf(w, rawData)
 	}
 	// if res, ok := CertificateMap[serialNumber]; !ok {
@@ -458,8 +459,10 @@ func GetMetaCertificate(w http.ResponseWriter, r *http.Request) {
 
 	rawData, err := redisMetaDb.Get(serialNumber).Result()
 	if err != nil {
+		// log.Printf("[Query] Certificate %s is not found, it does not exist or has been revoked.", serialNumber)
 		http.Error(w, "Certificate does not exist.", 500)
 	} else {
+		// log.Printf("[Query] Certificate %s success.", serialNumber)
 		_, _ = fmt.Fprintf(w, rawData)
 	}
 }
@@ -470,28 +473,13 @@ func RevokeABSCertificate(w http.ResponseWriter, r *http.Request) {
 
 	_ = r.ParseForm()
 	serialNumber := r.Form.Get("no")
-	args := make([][]byte, 0)
-	args = append(args, []byte(serialNumber))
-	resp, err := ChannelExecute("getCertificate", args)
-	if err != nil {
-		http.Error(w, "Certificate does not exist.", 500)
-		return
-	} else {
-		bData, _ := json.Marshal(resp)
-		fbInfo := FabricInfo{
-			ABSUID:       []byte("[Revoked]"),
-			SerialNumber: []byte(serialNumber),
-			Cert:         []byte("[Revoked at " + time.Now().Format("2006-01-02 15:03:04") + "] " + string(bData)),
-		}
-		fbWorker <- &fbInfo
-	}
-	_, err = redisdb.Del(serialNumber).Result()
+	_, err := redisdb.Del(serialNumber).Result()
 	_, err = redisMetaDb.Del(serialNumber).Result()
 	if err != nil {
-		log.Printf("[Revoke]撤销证书: %s 失败 %s", serialNumber, err.Error())
-		http.Error(w, "Certificate does not exist.", 500)
+		log.Printf("[Revoke] Certificate %s is not found, it does not exist or has been revoked.", serialNumber)
+		http.Error(w, "Certificate does not exist or has been revoked.", 500)
 	} else {
-		log.Printf("[Revoke]撤销证书: %s 成功", serialNumber)
+		log.Printf("[Revoke] Revoke certificate: %s success", serialNumber)
 		_, _ = fmt.Fprintf(w, "Revoke OK.")
 	}
 
@@ -511,6 +499,20 @@ func RevokeABSCertificate(w http.ResponseWriter, r *http.Request) {
 	_, err = redisRecordDb.ZRem("Total", serialNumber).Result()
 	if err != nil {
 		fmt.Printf("[ERROR] fail to remove certificate %v from meta zset", serialNumber)
+	}
+	args := make([][]byte, 0)
+	args = append(args, []byte(serialNumber))
+	resp, err := ChannelExecute("getCertificate", args)
+	if err != nil {
+		return
+	} else {
+		bData, _ := json.Marshal(resp)
+		fbInfo := FabricInfo{
+			ABSUID:       []byte("[Revoked]"),
+			SerialNumber: []byte(serialNumber),
+			Cert:         []byte("[Revoked at " + time.Now().Format("2006-01-02 15:03:04") + "] " + string(bData)),
+		}
+		fbWorker <- &fbInfo
 	}
 }
 
