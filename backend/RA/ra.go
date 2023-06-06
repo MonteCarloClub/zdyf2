@@ -45,6 +45,7 @@ var (
 	redisMetaDb      *redis.Client
 	redisRecordDb    *redis.Client
 	redisBlacklistDb *redis.Client
+	redisUIDdb 		 *redis.Client
 	CAPort           int
 	CANum            int
 	RAbase           int
@@ -67,19 +68,24 @@ func init() {
 		DB:       0,
 	})
 	redisMetaDb = redis.NewClient(&redis.Options{
-		Addr:     "10.176.40.28:6379",
+		Addr:     "10.176.40.28:6379", //证书简要信息
 		Password: "",
 		DB:       1,
 	})
 	redisRecordDb = redis.NewClient(&redis.Options{
-		Addr:     "10.176.40.28:6379",
+		Addr:     "10.176.40.28:6379", //证书记录
 		Password: "",
 		DB:       2,
 	})
 	redisBlacklistDb = redis.NewClient(&redis.Options{
-		Addr:     "10.176.40.28:6379",
+		Addr:     "10.176.40.28:6379", //黑名单
 		Password: "",
 		DB:       3,
+	})
+	redisUIDdb = redis.NewClient(&redis.Options{
+		Addr:     "10.176.40.28:6379", // ID去重
+		Password: "",
+		DB:       4,
 	})
 
 	// TODO redis 证书发放记录
@@ -106,6 +112,12 @@ func ApplyForABSCertificate(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "UID在黑名单中.", http.StatusBadRequest)
 			return
 		}
+	}
+	_, err := redisUIDdb.Get(uid).Result()
+	if err != redis.Nil {
+		log.Printf("[Apply] The certifivate of UID: %s is already exist.", uid)
+		http.Error(w, "UID证书已存在.", http.StatusBadRequest)
+		return
 	}
 	timeStr := time.Now()
 	validTimeStr := time.Now().Add(time.Hour * validHour)
@@ -152,7 +164,7 @@ func ApplyForABSCertificate(w http.ResponseWriter, r *http.Request) {
 	redisdb.Set(serialNumber, string(bData), time.Hour*validHour)
 	b, _ = json.Marshal(c)
 	redisMetaDb.Set(serialNumber, string(b), time.Hour*validHour)
-
+	redisUIDdb.Set(uid, "1", time.Hour*validHour)
 	// 证书颁发记录排序
 	/**
 	 * 此处在旧实现的基础上，将证书颁发信息存在redis的zset中，具体操作为：
