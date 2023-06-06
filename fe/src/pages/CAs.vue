@@ -12,7 +12,15 @@
             <a-avatar size="large">CA</a-avatar>
             <div class="info">
                 <div class="name">{{ ca.name }}</div>
-                <div class="desc">{{ ca.score }}</div>
+                <a-tooltip>
+                    <template #title v-if = "ca.score < 10">
+                    <p v-for = "log in logs">
+                        {{ log }}
+                    </p></template>
+                    <template #title v-else>无异常</template>
+                    <div class="desc">{{ ca.score }}</div>
+                </a-tooltip>
+                
             </div>
         </div>
     </div>
@@ -24,6 +32,8 @@ import { score as getCAScore, caName } from "@/api/node";
 import { promiseLimit, parallelWithLimit } from "@/utils/promises";
 
 const CANames: string[] = [];
+const logs:string[] =[];
+logs.push("为黑名单用户发放证书");
 
 async function requestCAlist() {
     const promises = new Array(20).fill(0).map(() => caName());

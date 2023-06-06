@@ -3,6 +3,8 @@
 CA=abs_server_ca
 RA=abs_server_ra
 Test=dpki_test
+Concu=Concurrency
+Veri=Verify
 Clean() {
   cd CA && make clean && cd ..
   cd RA && make clean && cd ..
@@ -62,12 +64,12 @@ MakeBe(){
 
 
 RunTest(){
-  echo "申请及验证证书数量： $1" 
+  # echo "申请及验证证书数量： $1" 
   cd ./Test
-  ./$Test -n $1
+  ./$Test -m $1 -n $2
   cd ..
-  echo "总计生成证书数量：" 
-  curl "http://10.176.40.47/dpki/GetCertificateNumber"
+  # echo "总计生成证书数量：" 
+  # curl "http://10.176.40.47/dpki/GetCertificateNumber"
 }
 
 killBe(){
@@ -79,6 +81,16 @@ KillAll() {
   cd network && ./stop.sh && cd ..
 }
 
+RunTest1(){
+  echo "并发测试" 
+  RunTest $Concu $1
+}
+
+RunTest2(){
+  echo "身份验证平均时间测试" 
+  RunTest $Veri $1
+}
+
 if [ $1 == 'clean' ]; then Clean
 elif [ $1 == 'build' ]; then Build
 elif [ $1 == 'run' ]; then RunAll $2 $3
@@ -88,5 +100,7 @@ elif [ $1 == 'killbe' ]; then killBe
 elif [ $1 == 'makebe' ]; then MakeBe
 elif [ $1 == 'cleanbe' ]; then CleanBe
 elif [ $1 == 'stop' ]; then KillAll
+elif [ $1 == 'test1' ]; then RunTest1 $2
+elif [ $1 == 'test2' ]; then RunTest2 $2
 else echo "unknown command"
 fi
